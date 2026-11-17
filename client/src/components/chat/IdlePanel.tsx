@@ -46,7 +46,7 @@ export function IdlePanel({
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="fact-chip">Üyelik yok</span>
         <span className="fact-chip">Mesaj kaydı yok</span>
-        <span className="fact-chip">30 saniyeye kadar arama</span>
+        <span className="fact-chip">Anında eşleşme</span>
       </div>
     </section>
   );
