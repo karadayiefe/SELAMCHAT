@@ -15,11 +15,21 @@ import { getDb } from "./db.js";
  *   close, crash, sweeper) deletes the room's messages immediately.
  */
 
-/** Tolerate transient network and serverless latency before declaring a tab gone. */
-export const PRESENCE_TIMEOUT_SECONDS = 20;
-const ONLINE_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;
-/** Only participants with a live heartbeat can be matched or kept in a room. */
-const MATCH_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;
+/** Waiting users have up to 30 seconds to establish a match. */
+export const QUEUE_WINDOW_SECONDS = 30;
+/** A new room gets up to 30 seconds for both browser tabs to acknowledge the match. */
+export const CHAT_START_GRACE_SECONDS = 30;
+/** After both tabs have seen the room, a silent peer is removed after five seconds. */
+export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 5;
+/** Counters update every poll and stop counting stale tabs within the disconnect window. */
+const COUNTER_WINDOW_SECONDS = CHAT_DISCONNECT_TIMEOUT_SECONDS;
+
+export function getPartnerTimeoutSeconds(roomAgeMs: number, partnerHasSeenRoom: boolean) {
+  const startupGraceActive =
+    roomAgeMs < CHAT_START_GRACE_SECONDS * 1000 && !partnerHasSeenRoom;
+  return startupGraceActive ? CHAT_START_GRACE_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
+}
+
 /** Safety net: messages of a closed room are always wiped. */
 const MAX_MESSAGES_PER_ROOM = 300;
 export const MAX_MESSAGE_LENGTH = 500;
@@ -268,7 +278,7 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
         eq(participants.status, "waiting"),
         ne(participants.id, meId),
         isNull(participants.roomId),
-        gt(participants.lastSeen, nowSecondsAgo(MATCH_WINDOW_SECONDS))
+        gt(participants.lastSeen, nowSecondsAgo(QUEUE_WINDOW_SECONDS))
       )
     )
     .orderBy(asc(participants.queuedAt))
@@ -285,7 +295,7 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
             inArray(participants.id, ids),
             eq(participants.status, "waiting"),
             isNull(participants.roomId),
-            gt(participants.lastSeen, nowSecondsAgo(MATCH_WINDOW_SECONDS))
+            gt(participants.lastSeen, nowSecondsAgo(QUEUE_WINDOW_SECONDS))
           )
         )
         .orderBy(asc(participants.id))
@@ -491,9 +501,16 @@ export async function sweep(force = false): Promise<void> {
   const [staleRows] = await d.execute(
     sql`SELECT r.id AS id FROM rooms r
         WHERE r.status = 'active'
+          AND (
+            r.createdAt <= ${nowSecondsAgo(CHAT_START_GRACE_SECONDS)}
+            OR (
+              SELECT COUNT(*) FROM participants ready
+              WHERE ready.roomId = r.id AND ready.lastSeen > r.createdAt
+            ) >= 2
+          )
           AND NOT EXISTS (
             SELECT 1 FROM participants p
-            WHERE p.roomId = r.id AND p.lastSeen > ${nowSecondsAgo(ONLINE_WINDOW_SECONDS)}
+            WHERE p.roomId = r.id AND p.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)}
           )
         LIMIT 50`
   );
@@ -520,7 +537,7 @@ async function readCounters(d: Db) {
   const [onlineRow] = await d
     .select({ total: sql<number>`COUNT(*)` })
     .from(participants)
-    .where(gt(participants.lastSeen, nowSecondsAgo(ONLINE_WINDOW_SECONDS)));
+    .where(gt(participants.lastSeen, nowSecondsAgo(COUNTER_WINDOW_SECONDS)));
 
   const [chatRow] = await d
     .select({ total: sql<number>`COUNT(*)` })
@@ -530,7 +547,7 @@ async function readCounters(d: Db) {
         eq(rooms.status, "active"),
         sql`EXISTS (
           SELECT 1 FROM participants p
-          WHERE p.roomId = rooms.id AND p.lastSeen > ${nowSecondsAgo(ONLINE_WINDOW_SECONDS)}
+          WHERE p.roomId = rooms.id AND p.lastSeen > ${nowSecondsAgo(COUNTER_WINDOW_SECONDS)}
         )`
       )
     );
@@ -594,18 +611,33 @@ export async function getState(token: string): Promise<ChatState | null> {
         return { status: "partner_left" as const, partner: null, messages: [] as ChatMessage[], retry: false };
       }
 
+      const roomAgeMs = Date.now() - room.createdAt.getTime();
+
       const partnerRows = await tx
         .select({
           ...getTableColumns(participants),
-          fresh: sql<number>`(participants.lastSeen > ${nowSecondsAgo(MATCH_WINDOW_SECONDS)})`,
+          freshDuringStartup: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_START_GRACE_SECONDS)})`,
+          freshAfterDisconnectWindow: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})`,
+          seenRoom: sql<number>`(participants.lastSeen > ${room.createdAt})`,
           typing: sql<number>`(participants.typingAt IS NOT NULL AND participants.typingAt > ${nowSecondsAgo(6)})`,
         })
         .from(participants)
         .where(and(eq(participants.roomId, roomId), ne(participants.id, current.id)))
         .limit(1);
       const partnerRow = partnerRows[0];
+      const partnerTimeoutSeconds = getPartnerTimeoutSeconds(
+        roomAgeMs,
+        Boolean(Number(partnerRow?.seenRoom))
+      );
+      const partnerFresh = partnerRow
+        ? Number(
+            partnerTimeoutSeconds === CHAT_START_GRACE_SECONDS
+              ? partnerRow.freshDuringStartup
+              : partnerRow.freshAfterDisconnectWindow
+          )
+        : 0;
 
-      if (!partnerRow || !Number(partnerRow.fresh)) {
+      if (!partnerRow || !partnerFresh) {
         // Heartbeat timeout is treated exactly like a deliberate leave.
         await closeRoom(tx, roomId, partnerRow?.id ?? -1);
         return { status: "partner_left" as const, partner: null, messages: [] as ChatMessage[], retry: false };

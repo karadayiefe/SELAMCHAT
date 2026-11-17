@@ -2,14 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { chatApi, type ChatMessage, type ChatState, type ChatStatus } from "@/lib/chatApi";
 
 const TOKEN_KEY = "mukchat.token";
-/** The brief says: if nobody is available within 5 seconds, say so. */
-const NO_ONE_AFTER_SECONDS = 5;
+/** Keep search open long enough for students to join without using the chat-leave timeout. */
+const NO_ONE_AFTER_SECONDS = 30;
 
-function delayFor(status: ChatStatus, hidden: boolean) {
-  if (status === "chatting") return hidden ? 3000 : 1200;
-  if (status === "waiting") return 1400;
-  if (status === "partner_left") return 1500;
-  return 1500;
+function delayFor(hidden: boolean) {
+  return hidden ? 2500 : 1000;
 }
 
 function readStoredToken(): string | null {
@@ -134,7 +131,7 @@ export function useChat() {
           continue;
         }
 
-        await sleep(delayFor(statusRef.current, document.hidden));
+        await sleep(delayFor(document.hidden));
         if (cancelled) break;
 
         const lifecycle = lifecycleRef.current;
