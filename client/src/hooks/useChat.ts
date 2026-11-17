@@ -133,9 +133,7 @@ export function useChat() {
           continue;
         }
 
-        await sleep(delayFor(document.hidden));
-        if (cancelled) break;
-
+        const pollStartedAt = performance.now();
         const lifecycle = lifecycleRef.current;
         try {
           const res = await chatApi.state(token);
@@ -152,6 +150,9 @@ export function useChat() {
         } catch {
           if (!cancelled) setConnectionIssue(true);
         }
+
+        const remainingDelay = delayFor(document.hidden) - (performance.now() - pollStartedAt);
+        if (remainingDelay > 0) await sleep(remainingDelay);
       }
     };
 
