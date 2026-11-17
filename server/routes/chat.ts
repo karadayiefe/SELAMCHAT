@@ -6,6 +6,7 @@ import {
   leaveChat,
   sendMessage,
   setTyping,
+  setVisibility,
   startSession,
   sweep,
 } from "../chat.js";
@@ -51,10 +52,36 @@ export function registerChatRoutes(app: Express) {
     respond(req, res, async () => {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
-      await sweep();
       const state = await getState(token);
       if (!state) return { ok: false, error: "no_session" };
+      await sweep();
       return { ok: true, state };
+    })
+  );
+
+  router.post("/visibility", (req, res) =>
+    respond(req, res, async () => {
+      const token = readToken(req);
+      if (!token) return { ok: false, error: "no_token" };
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const version = Number(body.version);
+      if (!Number.isSafeInteger(version) || version <= 0) {
+        return { ok: false, error: "invalid_visibility_version" };
+      }
+      await setVisibility(token, body.hidden === true, version);
+      return { ok: true };
+    })
+  );
+
+  router.post("/sweep", (req, res) =>
+    respond(req, res, async () => {
+      const expectedSecret = process.env.CRON_SECRET;
+      if (!expectedSecret || req.get("authorization") !== `Bearer ${expectedSecret}`) {
+        res.status(401);
+        return { ok: false, error: "unauthorized" };
+      }
+      await sweep(true);
+      return { ok: true };
     })
   );
 

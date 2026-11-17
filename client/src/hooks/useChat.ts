@@ -83,6 +83,7 @@ export function useChat() {
     let cancelled = false;
     let timeoutId: number | undefined;
     let wakeSleep: (() => void) | null = null;
+    let lastVisibilityVersion = 0;
 
     const sleep = (ms: number) =>
       new Promise<void>(resolve => {
@@ -106,6 +107,7 @@ export function useChat() {
           if (res.ok && res.state) {
             apply(res.state);
             setConnectionIssue(false);
+            reportVisibility();
           } else {
             setConnectionIssue(true);
           }
@@ -153,21 +155,49 @@ export function useChat() {
       }
     };
 
-    const refreshOnReturn = () => {
+    const reportVisibility = () => {
+      const token = tokenRef.current;
+      if (token) {
+        let version = Math.max(Date.now(), lastVisibilityVersion + 1);
+        try {
+          const key = `mukalchat:visibility-version:${token}`;
+          const stored = Number(window.sessionStorage.getItem(key) ?? 0);
+          if (Number.isSafeInteger(stored)) version = Math.max(version, stored + 1);
+          window.sessionStorage.setItem(key, String(version));
+        } catch { /* Fall back to the in-memory monotonic counter. */ }
+        lastVisibilityVersion = version;
+        const body = JSON.stringify({ token, hidden: document.hidden, version });
+        const payload = new Blob([body], { type: "application/json" });
+        let queued = false;
+        try {
+          if (typeof navigator.sendBeacon === "function") {
+            queued = navigator.sendBeacon("/api/chat/visibility", payload);
+          }
+        } catch { /* Fall through to a keepalive fetch. */ }
+        if (!queued) {
+          void fetch("/api/chat/visibility", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+            credentials: "same-origin",
+            keepalive: true,
+          }).catch(() => undefined);
+        }
+      }
       if (!document.hidden) wakeSleep?.();
     };
-    document.addEventListener("visibilitychange", refreshOnReturn);
+    document.addEventListener("visibilitychange", reportVisibility);
     void loop();
 
     return () => {
       cancelled = true;
-      document.removeEventListener("visibilitychange", refreshOnReturn);
+      document.removeEventListener("visibilitychange", reportVisibility);
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
       wakeSleep = null;
     };
   }, [apply]);
 
-  // Counts how long the visitor has been waiting (for the 5 second rule).
+  // Counts how long the visitor has been waiting before the 30-second notice.
   useEffect(() => {
     if (state?.status !== "waiting") {
       waitStartedAt.current = null;

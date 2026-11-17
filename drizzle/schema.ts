@@ -1,4 +1,4 @@
-import { index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { bigint, boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -50,6 +50,8 @@ export const participants = mysqlTable(
     roomId: int("roomId"),
     queuedAt: timestamp("queuedAt"),
     typingAt: timestamp("typingAt"),
+    isHidden: boolean("isHidden").default(false).notNull(),
+    visibilityVersion: bigint("visibilityVersion", { mode: "number" }).default(0).notNull(),
     lastSeen: timestamp("lastSeen").defaultNow().notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },

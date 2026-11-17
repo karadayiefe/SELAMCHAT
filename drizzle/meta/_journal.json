@@ -15,6 +15,20 @@
       "when": 1794932391233,
       "tag": "0001_cloudy_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1794950904777,
+      "tag": "0002_add_chat_tab_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1794951167641,
+      "tag": "0003_visibility_version_ordering",
+      "breakpoints": true
     }
   ]
 }

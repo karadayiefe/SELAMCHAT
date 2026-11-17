@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   ANIMALS,
+  CHAT_BACKGROUND_TIMEOUT_SECONDS,
   CHAT_DISCONNECT_TIMEOUT_SECONDS,
-  CHAT_START_GRACE_SECONDS,
   QUEUE_WINDOW_SECONDS,
   getPartnerTimeoutSeconds,
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("separates initial search and room startup from active-chat disconnect cleanup", () => {
+  it("keeps the 30-second search window separate from visible and hidden chat disconnect windows", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
-    expect(CHAT_START_GRACE_SECONDS).toBe(30);
     expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(5);
-    expect(getPartnerTimeoutSeconds(1000, false)).toBe(30);
-    expect(getPartnerTimeoutSeconds(1000, true)).toBe(5);
-    expect(getPartnerTimeoutSeconds(31_000, false)).toBe(5);
+    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
+    expect(getPartnerTimeoutSeconds(false)).toBe(5);
+    expect(getPartnerTimeoutSeconds(true)).toBe(30);
   });
 
   it("assigns unique, schema-safe animal identities", () => {

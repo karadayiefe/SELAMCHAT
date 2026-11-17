@@ -17,17 +17,13 @@ import { getDb } from "./db.js";
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** A new room gets up to 30 seconds for both browser tabs to acknowledge the match. */
-export const CHAT_START_GRACE_SECONDS = 30;
-/** After both tabs have seen the room, a silent peer is removed after five seconds. */
+/** A foreground peer is considered disconnected after five seconds without a heartbeat. */
 export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 5;
-/** Counters update every poll and stop counting stale tabs within the disconnect window. */
-const COUNTER_WINDOW_SECONDS = CHAT_DISCONNECT_TIMEOUT_SECONDS;
+/** Hidden tabs get extra time because mobile browsers throttle or suspend background timers. */
+export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
 
-export function getPartnerTimeoutSeconds(roomAgeMs: number, partnerHasSeenRoom: boolean) {
-  const startupGraceActive =
-    roomAgeMs < CHAT_START_GRACE_SECONDS * 1000 && !partnerHasSeenRoom;
-  return startupGraceActive ? CHAT_START_GRACE_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
+export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
+  return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
 }
 
 /** Safety net: messages of a closed room are always wiped. */
@@ -256,7 +252,7 @@ async function closeRoom(tx: Tx, roomId: number, leavingId: number): Promise<voi
   if (leavingId > 0) {
     await tx
       .update(participants)
-      .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null })
+      .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
       .where(and(eq(participants.id, leavingId), eq(participants.roomId, roomId)));
     otherSide.push(ne(participants.id, leavingId));
   }
@@ -307,7 +303,13 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
       const createdRoomId = Number(inserted[0].insertId);
       const claimed = await tx
         .update(participants)
-        .set({ status: "chatting", roomId: createdRoomId, queuedAt: null, typingAt: null })
+        .set({
+          status: "chatting",
+          roomId: createdRoomId,
+          queuedAt: null,
+          typingAt: null,
+          lastSeen: sql`NOW()`,
+        })
         .where(inArray(participants.id, ids));
 
       if (claimed[0].affectedRows !== 2) throw new Error("match_claim_failed");
@@ -348,6 +350,7 @@ export async function joinQueue(token: string): Promise<void> {
         roomId: null,
         typingAt: null,
         lastSeen: sql`NOW()`,
+        isHidden: false,
       })
       .where(eq(participants.id, me.id));
     return true;
@@ -389,7 +392,7 @@ export async function leaveChat(token: string): Promise<void> {
       if (current.roomId) await closeRoom(tx, current.roomId, current.id);
       await tx
         .update(participants)
-        .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null })
+        .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
         .where(eq(participants.id, current.id));
       return false;
     });
@@ -482,11 +485,49 @@ export async function setTyping(token: string): Promise<void> {
     .where(eq(participants.id, me.id));
 }
 
+/** Visibility is a separate hint, not a leave signal; hidden clients still keep their chat. */
+export async function setVisibility(
+  token: string,
+  isHidden: boolean,
+  version: number
+): Promise<void> {
+  const d = await db();
+  await d
+    .update(participants)
+    .set({ isHidden, visibilityVersion: version })
+    .where(
+      and(
+        eq(participants.token, token),
+        sql`${participants.visibilityVersion} < ${version}`
+      )
+    );
+}
+
 /* -------------------------------------------------------------------------- */
 /* Housekeeping                                                               */
 /* -------------------------------------------------------------------------- */
 
 let lastSweep = 0;
+
+/** Revalidates freshness under the same participant locks used by room closure. */
+async function closeRoomIfStale(tx: Tx, roomId: number): Promise<void> {
+  await lockRoomParticipants(tx, roomId);
+  const freshParticipants = await tx
+    .select({ id: participants.id })
+    .from(participants)
+    .where(
+      and(
+        eq(participants.roomId, roomId),
+        sql`(
+          (participants.isHidden = 0 AND participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})
+          OR (participants.isHidden = 1 AND participants.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})
+        )`
+      )
+    )
+    .limit(1);
+  if (freshParticipants.length > 0) return;
+  await closeRoom(tx, roomId, -1);
+}
 
 /** Removes abandoned rooms, their messages, and long-gone visitors. */
 export async function sweep(force = false): Promise<void> {
@@ -501,23 +542,19 @@ export async function sweep(force = false): Promise<void> {
   const [staleRows] = await d.execute(
     sql`SELECT r.id AS id FROM rooms r
         WHERE r.status = 'active'
-          AND (
-            r.createdAt <= ${nowSecondsAgo(CHAT_START_GRACE_SECONDS)}
-            OR (
-              SELECT COUNT(*) FROM participants ready
-              WHERE ready.roomId = r.id AND ready.lastSeen > r.createdAt
-            ) >= 2
-          )
           AND NOT EXISTS (
             SELECT 1 FROM participants p
-            WHERE p.roomId = r.id AND p.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)}
+            WHERE p.roomId = r.id AND (
+              (p.isHidden = 0 AND p.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})
+              OR (p.isHidden = 1 AND p.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})
+            )
           )
         LIMIT 50`
   );
   const staleRooms = staleRows as unknown as Array<{ id: number }>;
 
   for (const room of staleRooms) {
-    await d.transaction(tx => closeRoom(tx, Number(room.id), -1));
+    await d.transaction(tx => closeRoomIfStale(tx, Number(room.id)));
   }
 
   // Safety net: never keep messages of a closed room.
@@ -537,7 +574,10 @@ async function readCounters(d: Db) {
   const [onlineRow] = await d
     .select({ total: sql<number>`COUNT(*)` })
     .from(participants)
-    .where(gt(participants.lastSeen, nowSecondsAgo(COUNTER_WINDOW_SECONDS)));
+    .where(sql`(
+      (participants.isHidden = 0 AND participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})
+      OR (participants.isHidden = 1 AND participants.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})
+    )`);
 
   const [chatRow] = await d
     .select({ total: sql<number>`COUNT(*)` })
@@ -547,7 +587,10 @@ async function readCounters(d: Db) {
         eq(rooms.status, "active"),
         sql`EXISTS (
           SELECT 1 FROM participants p
-          WHERE p.roomId = rooms.id AND p.lastSeen > ${nowSecondsAgo(COUNTER_WINDOW_SECONDS)}
+          WHERE p.roomId = rooms.id AND (
+            (p.isHidden = 0 AND p.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})
+            OR (p.isHidden = 1 AND p.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})
+          )
         )`
       )
     );
@@ -611,29 +654,23 @@ export async function getState(token: string): Promise<ChatState | null> {
         return { status: "partner_left" as const, partner: null, messages: [] as ChatMessage[], retry: false };
       }
 
-      const roomAgeMs = Date.now() - room.createdAt.getTime();
-
       const partnerRows = await tx
         .select({
           ...getTableColumns(participants),
-          freshDuringStartup: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_START_GRACE_SECONDS)})`,
-          freshAfterDisconnectWindow: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})`,
-          seenRoom: sql<number>`(participants.lastSeen > ${room.createdAt})`,
+          freshVisible: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})`,
+          freshHidden: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})`,
           typing: sql<number>`(participants.typingAt IS NOT NULL AND participants.typingAt > ${nowSecondsAgo(6)})`,
         })
         .from(participants)
         .where(and(eq(participants.roomId, roomId), ne(participants.id, current.id)))
         .limit(1);
       const partnerRow = partnerRows[0];
-      const partnerTimeoutSeconds = getPartnerTimeoutSeconds(
-        roomAgeMs,
-        Boolean(Number(partnerRow?.seenRoom))
-      );
+      const partnerTimeoutSeconds = getPartnerTimeoutSeconds(Boolean(partnerRow?.isHidden));
       const partnerFresh = partnerRow
         ? Number(
-            partnerTimeoutSeconds === CHAT_START_GRACE_SECONDS
-              ? partnerRow.freshDuringStartup
-              : partnerRow.freshAfterDisconnectWindow
+            partnerTimeoutSeconds === CHAT_BACKGROUND_TIMEOUT_SECONDS
+              ? partnerRow.freshHidden
+              : partnerRow.freshVisible
           )
         : 0;
 

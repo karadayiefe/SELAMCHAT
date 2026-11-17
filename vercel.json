@@ -1,11 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run build:static",
+  "buildCommand": "test -n \"$DATABASE_URL\" && pnpm db:migrate && pnpm run build:static",
   "outputDirectory": "dist/public",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "schedules": {
+    "chat-orphan-cleanup": {
+      "schedule": "*/15 * * * *",
+      "path": "/api/chat/sweep",
+      "requestMethod": "POST",
+      "jitter": 15
+    }
+  }
 }
