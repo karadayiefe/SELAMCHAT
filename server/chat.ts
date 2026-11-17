@@ -16,9 +16,10 @@ import { getDb } from "./db.js";
  */
 
 /** A short heartbeat lease: a silent tab should disappear within a few seconds. */
-const ONLINE_WINDOW_SECONDS = 3;
+export const PRESENCE_TIMEOUT_SECONDS = 3;
+const ONLINE_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;
 /** Only participants with a live heartbeat can be matched or kept in a room. */
-const MATCH_WINDOW_SECONDS = 3;
+const MATCH_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;
 /** Safety net: messages of a closed room are always wiped. */
 const MAX_MESSAGES_PER_ROOM = 300;
 export const MAX_MESSAGE_LENGTH = 500;
