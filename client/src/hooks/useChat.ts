@@ -6,10 +6,10 @@ const TOKEN_KEY = "mukchat.token";
 const NO_ONE_AFTER_SECONDS = 5;
 
 function delayFor(status: ChatStatus, hidden: boolean) {
-  if (status === "chatting") return hidden ? 3000 : 1200;
-  if (status === "waiting") return 1400;
-  if (status === "partner_left") return 3000;
-  return 4000;
+  if (status === "chatting") return hidden ? 1200 : 800;
+  if (status === "waiting") return 900;
+  if (status === "partner_left") return 1000;
+  return 1000;
 }
 
 function readStoredToken(): string | null {
@@ -85,10 +85,18 @@ export function useChat() {
   useEffect(() => {
     let cancelled = false;
     let timeoutId: number | undefined;
+    let wakeSleep: (() => void) | null = null;
 
     const sleep = (ms: number) =>
       new Promise<void>(resolve => {
-        timeoutId = window.setTimeout(resolve, ms);
+        const finish = () => {
+          if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+          timeoutId = undefined;
+          wakeSleep = null;
+          resolve();
+        };
+        timeoutId = window.setTimeout(finish, ms);
+        wakeSleep = finish;
       });
 
     const loop = async () => {
@@ -148,11 +156,17 @@ export function useChat() {
       }
     };
 
+    const refreshOnReturn = () => {
+      if (!document.hidden) wakeSleep?.();
+    };
+    document.addEventListener("visibilitychange", refreshOnReturn);
     void loop();
 
     return () => {
       cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      wakeSleep = null;
     };
   }, [apply]);
 

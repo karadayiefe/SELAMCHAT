@@ -26,11 +26,17 @@ export function LiveCounters({ online, activeChats }: { online: number; activeCh
     <div className="counters" aria-live="polite" aria-atomic="true">
       <span className="counter-pill" title="Şu anda sitede olan kişi sayısı">
         <span className="live-dot" aria-hidden="true" />
-        Canlı Bağlantı: <b>{online}</b>
+        Canlı Bağlantı:{" "}
+        <b key={online} className="counter-number">
+          {online}
+        </b>
       </span>
       <span className="counter-pill" title="Şu anda süren sohbet odası sayısı">
         <span className="live-dot live-dot--chat" aria-hidden="true" />
-        Aktif Sohbet: <b>{activeChats}</b>
+        Aktif Sohbet:{" "}
+        <b key={activeChats} className="counter-number">
+          {activeChats}
+        </b>
       </span>
     </div>
   );

@@ -15,10 +15,10 @@ import { getDb } from "./db.js";
  *   close, crash, sweeper) deletes the room's messages immediately.
  */
 
-/** A participant counts as online while their heartbeat is this fresh. */
-const ONLINE_WINDOW_SECONDS = 20;
-/** Only participants seen this recently can be matched. */
-const MATCH_WINDOW_SECONDS = 20;
+/** A short heartbeat lease: a silent tab should disappear within a few seconds. */
+const ONLINE_WINDOW_SECONDS = 3;
+/** Only participants with a live heartbeat can be matched or kept in a room. */
+const MATCH_WINDOW_SECONDS = 3;
 /** Safety net: messages of a closed room are always wiped. */
 const MAX_MESSAGES_PER_ROOM = 300;
 export const MAX_MESSAGE_LENGTH = 500;
@@ -52,6 +52,42 @@ export const ANIMALS: AnimalDefinition[] = [
   { key: "ahtapot", name: "Ahtapot", emoji: "🐙", color: "#FF7BA9" },
   { key: "yunus", name: "Yunus", emoji: "🐬", color: "#6FD3F5" },
   { key: "kertenkele", name: "Kertenkele", emoji: "🦎", color: "#9EE37D" },
+  { key: "fil", name: "Fil", emoji: "🐘", color: "#A7B2C5" },
+  { key: "ayi", name: "Ayı", emoji: "🐻", color: "#C68E67" },
+  { key: "kurt", name: "Kurt", emoji: "🐺", color: "#A9B2BF" },
+  { key: "kaplan", name: "Kaplan", emoji: "🐯", color: "#FF9B54" },
+  { key: "at", name: "At", emoji: "🐴", color: "#C99B72" },
+  { key: "geyik", name: "Geyik", emoji: "🦌", color: "#D2AA7F" },
+  { key: "zebra", name: "Zebra", emoji: "🦓", color: "#DCE4F0" },
+  { key: "kanguru", name: "Kanguru", emoji: "🦘", color: "#E28D68" },
+  { key: "kirpi", name: "Kirpi", emoji: "🦔", color: "#E0BC93" },
+  { key: "sincap", name: "Sincap", emoji: "🐿️", color: "#DDAA73" },
+  { key: "yarasa", name: "Yarasa", emoji: "🦇", color: "#A99ADB" },
+  { key: "papagan", name: "Papağan", emoji: "🦜", color: "#79DDA5" },
+  { key: "tavus_kusu", name: "Tavus Kuşu", emoji: "🦚", color: "#78CFC2" },
+  { key: "ordek", name: "Ördek", emoji: "🦆", color: "#F7D45C" },
+  { key: "flamingo", name: "Flamingo", emoji: "🦩", color: "#FF9DB8" },
+  { key: "kartal", name: "Kartal", emoji: "🦅", color: "#C9A777" },
+  { key: "balina", name: "Balina", emoji: "🐋", color: "#7799D9" },
+  { key: "kopekbaligi", name: "Köpekbalığı", emoji: "🦈", color: "#8DC6E8" },
+  { key: "fok", name: "Fok", emoji: "🦭", color: "#B3D8EA" },
+  { key: "su_samuru", name: "Su Samuru", emoji: "🦦", color: "#B99070" },
+  { key: "yengec", name: "Yengeç", emoji: "🦀", color: "#FF7A70" },
+  { key: "istakoz", name: "Istakoz", emoji: "🦞", color: "#F06E65" },
+  { key: "karides", name: "Karides", emoji: "🦐", color: "#FFAF8A" },
+  { key: "deniz_anasi", name: "Denizanası", emoji: "🪼", color: "#C69FFF" },
+  { key: "salyangoz", name: "Salyangoz", emoji: "🐌", color: "#B9A7D4" },
+  { key: "kelebek", name: "Kelebek", emoji: "🦋", color: "#FF8FC1" },
+  { key: "ugur_bocegi", name: "Uğur Böceği", emoji: "🐞", color: "#F07C75" },
+  { key: "lama", name: "Lama", emoji: "🦙", color: "#D4A887" },
+  { key: "deve", name: "Deve", emoji: "🐪", color: "#E2B675" },
+  { key: "goril", name: "Goril", emoji: "🦍", color: "#A7A3B6" },
+  { key: "orangutan", name: "Orangutan", emoji: "🦧", color: "#E18C55" },
+  { key: "kuzu", name: "Kuzu", emoji: "🐑", color: "#D9D6CE" },
+  { key: "keci", name: "Keçi", emoji: "🐐", color: "#C9B89E" },
+  { key: "inek", name: "İnek", emoji: "🐮", color: "#ECE6D8" },
+  { key: "fare", name: "Fare", emoji: "🐭", color: "#C8B9C7" },
+  { key: "karga", name: "Karga", emoji: "🐦‍⬛", color: "#9FA8B6" },
 ];
 
 export type ChatStatus = "idle" | "waiting" | "chatting" | "partner_left";

@@ -42,7 +42,10 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <>
+          <div
+            key={status === "chatting" ? `chat-${state.roomId ?? "none"}` : status}
+            className="state-panel-enter w-full"
+          >
             {notice && (
               <div className="px-4 pt-4">
                 <div className="notice">
@@ -75,7 +78,7 @@ export default function Home() {
             ) : (
               <IdlePanel me={state.me} busy={busy} onStart={() => void join()} />
             )}
-          </>
+          </div>
         )}
       </main>
 
