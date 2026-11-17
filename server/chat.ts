@@ -1,7 +1,7 @@
 import { and, asc, eq, getTableColumns, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { messages, participants, rooms } from "../drizzle/schema";
-import { getDb } from "./db";
+import { messages, participants, rooms } from "../drizzle/schema.js";
+import { getDb } from "./db.js";
 
 /**
  * MUKALCHAT server logic.

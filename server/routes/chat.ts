@@ -8,7 +8,7 @@ import {
   setTyping,
   startSession,
   sweep,
-} from "../chat";
+} from "../chat.js";
 
 function noStore(res: Response) {
   res.set("Cache-Control", "no-store, max-age=0");

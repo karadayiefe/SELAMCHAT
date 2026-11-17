@@ -1,6 +1,6 @@
 import express from "express";
-import { registerChatRoutes } from "../server/routes/chat";
-import { publicPlatformScript } from "../server/_core/publicConfig";
+import { registerChatRoutes } from "../server/routes/chat.js";
+import { publicPlatformScript } from "../server/_core/publicConfig.js";
 
 const app = express();
 
