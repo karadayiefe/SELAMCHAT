@@ -6,10 +6,10 @@ const TOKEN_KEY = "mukchat.token";
 const NO_ONE_AFTER_SECONDS = 5;
 
 function delayFor(status: ChatStatus, hidden: boolean) {
-  if (status === "chatting") return hidden ? 1200 : 800;
-  if (status === "waiting") return 900;
-  if (status === "partner_left") return 1000;
-  return 1000;
+  if (status === "chatting") return hidden ? 3000 : 1200;
+  if (status === "waiting") return 1400;
+  if (status === "partner_left") return 1500;
+  return 1500;
 }
 
 function readStoredToken(): string | null {

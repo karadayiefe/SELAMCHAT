@@ -15,8 +15,8 @@ import { getDb } from "./db.js";
  *   close, crash, sweeper) deletes the room's messages immediately.
  */
 
-/** A short heartbeat lease: a silent tab should disappear within a few seconds. */
-export const PRESENCE_TIMEOUT_SECONDS = 3;
+/** Tolerate transient network and serverless latency before declaring a tab gone. */
+export const PRESENCE_TIMEOUT_SECONDS = 20;
 const ONLINE_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;
 /** Only participants with a live heartbeat can be matched or kept in a room. */
 const MATCH_WINDOW_SECONDS = PRESENCE_TIMEOUT_SECONDS;

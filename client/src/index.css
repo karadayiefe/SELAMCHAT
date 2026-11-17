@@ -637,13 +637,13 @@
   }
 
   .state-panel-enter {
-    animation: state-panel-enter 180ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
+    animation: state-panel-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   @keyframes state-panel-enter {
     from {
       opacity: 0;
-      transform: translateY(7px) scale(0.995);
+      transform: translateY(14px) scale(0.992);
     }
     to {
       opacity: 1;

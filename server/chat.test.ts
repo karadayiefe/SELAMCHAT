@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ANIMALS, PRESENCE_TIMEOUT_SECONDS } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("uses a short heartbeat timeout", () => {
-    expect(PRESENCE_TIMEOUT_SECONDS).toBeGreaterThan(0);
-    expect(PRESENCE_TIMEOUT_SECONDS).toBeLessThanOrEqual(3);
+  it("keeps a tolerant heartbeat window so transient latency does not end a chat", () => {
+    expect(PRESENCE_TIMEOUT_SECONDS).toBe(20);
   });
 
   it("assigns unique, schema-safe animal identities", () => {
