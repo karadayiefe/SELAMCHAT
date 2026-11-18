@@ -7,7 +7,7 @@ import { ThemeSettings } from "@/components/chat/ThemeSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChangelogCards } from "@/pages/Changelog";
 import { useState } from "react";
 
@@ -59,8 +59,13 @@ export default function Home() {
   const online = state?.counters.online ?? 0;
   const activeChats = state?.counters.activeChats ?? 0;
   const ownLeaveNotice = status === "idle" && notice === "Sohbeti bitirdin. Her şey silindi.";
-  const { isCatMode, toggleCatMode } = useTheme();
+  const { setTheme, isCatMode, toggleCatMode } = useTheme();
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const selectViceCity = () => {
+    if (isCatMode) toggleCatMode();
+    setTheme("vice-city");
+    setChangelogOpen(false);
+  };
 
   return (
     <div className="page-shell">
@@ -157,10 +162,9 @@ export default function Home() {
         <DialogContent className="changelog-dialog">
           <DialogHeader>
             <DialogTitle>MUKALCHAT — CHANGELOG</DialogTitle>
-            <DialogDescription>16 Kasım'dan bugüne MUKALCHAT'te neler oldu?</DialogDescription>
           </DialogHeader>
           <div className="changelog-dialog-scroll">
-            <ChangelogCards />
+            <ChangelogCards onSelectViceCity={selectViceCity} />
           </div>
         </DialogContent>
       </Dialog>

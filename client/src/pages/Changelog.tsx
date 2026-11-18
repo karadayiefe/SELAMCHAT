@@ -1,4 +1,4 @@
-import { CalendarDays, Check } from "lucide-react";
+import { CalendarDays, Check, Play } from "lucide-react";
 
 export const changes = [
   {
@@ -15,7 +15,7 @@ export const changes = [
   },
   {
     date: "17 Kasım 2026",
-    title: "DAHA GÜVENİLİR ANONİM SOHBET",
+    title: "İLK ADIM VE GELİŞTİRMELER",
     description:
       "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
     sectionLabel: "Bu gün gelenler:",
@@ -29,24 +29,29 @@ export const changes = [
     date: "18 Kasım 2026",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
     description:
-      "~ VİCE CITY BABYYYY 🌴\n\nGTA 6 çıkışına özel tema sonunda MUKALCHAT'te!\n\nBu kez biraz farklı şeyler denedik:",
+      "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
+    sectionLabel: "Bu gün açılanlar:",
     details: [
-      "🌴 GTA 6 özel teması eklendi.",
-      "🎵 GTA 6 temasına özel müzik eklendi.",
-      "🐈 Bir yerlere sakladığımız küçük bir kedi teması Easter egg'i var.",
-      "Kediyi kendiniz bulun. :) Bir yerlere tıklayın, etrafı keşfedin. Belki de gizli kediyi ilk siz bulursunuz.",
+      "GTA 6 özel teması ve tema müziği eklendi.",
+      "GTA 6 temasından bağımsız ayrı bir civciv Easter egg'i saklandı.",
+      "Civcivi kendiniz bulun. Tıklayın, etrafı keşfedin; belki gizli civcivi ilk siz bulursunuz.",
     ],
+    viceCity: true,
   },
   {
-    date: "V1.0 BETA",
-    title: "VE BU GECE... 23:00...",
-    description: "MUKALCHAT V1.0 BETA",
-    details: ["16 Kasım'da bir fikir olarak başladı. Şimdi sizinle."],
+    date: "18 Kasım 2026 · 23:00",
+    title: "MUKALCHAT V1.0 BETA",
+    description: "ŞU AN AÇILDI",
+    details: ["18 Kasım 2026, saat 23:00 itibarıyla MUKALCHAT artık sizinle."],
     finale: true,
   },
 ];
 
-export function ChangelogCards() {
+interface ChangelogCardsProps {
+  onSelectViceCity?: () => void;
+}
+
+export function ChangelogCards({ onSelectViceCity }: ChangelogCardsProps) {
   return (
     <div className="changelog-list">
       {changes.map(change => (
@@ -69,6 +74,12 @@ export function ChangelogCards() {
               </li>
             ))}
           </ul>
+          {change.viceCity && onSelectViceCity && (
+            <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>
+              <Play size={15} fill="currentColor" aria-hidden="true" />
+              GTA 6 temasını seç
+            </button>
+          )}
         </article>
       ))}
     </div>
