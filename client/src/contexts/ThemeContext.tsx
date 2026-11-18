@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 export type Theme = "light" | "dark" | "vice-city";
 
@@ -7,12 +7,15 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
   isCatMode: boolean;
   toggleCatMode: () => void;
+  catSoundEnabled: boolean;
+  toggleCatSound: () => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = "mukalchat-theme";
+const CAT_SOUND_STORAGE_KEY = "mukalchat-cat-sound";
 
 function readStoredTheme(defaultTheme: Theme): Theme {
   try {
@@ -38,6 +41,41 @@ export function ThemeProvider({
     switchable ? readStoredTheme(defaultTheme) : defaultTheme
   );
   const [isCatMode, setIsCatMode] = useState(false);
+  const [catSoundEnabled, setCatSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem(CAT_SOUND_STORAGE_KEY) !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const catAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio("/cat-theme.mp3");
+    audio.loop = true;
+    audio.volume = 0.35;
+    catAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      catAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = catAudioRef.current;
+    if (!audio) return;
+
+    if (isCatMode && catSoundEnabled) {
+      void audio.play().catch(() => {
+        // Browsers may block playback until the next user gesture.
+      });
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }, [isCatMode, catSoundEnabled]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -60,9 +98,31 @@ export function ThemeProvider({
     ? () => setTheme(previous => (previous === "light" ? "dark" : "light"))
     : undefined;
   const toggleCatMode = () => setIsCatMode(previous => !previous);
+  const toggleCatSound = () => {
+    setCatSoundEnabled(previous => {
+      const next = !previous;
+      try {
+        localStorage.setItem(CAT_SOUND_STORAGE_KEY, next ? "on" : "off");
+      } catch {
+        // The preference still applies for this page if storage is unavailable.
+      }
+      return next;
+    });
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isCatMode, toggleCatMode, toggleTheme, switchable }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        isCatMode,
+        toggleCatMode,
+        catSoundEnabled,
+        toggleCatSound,
+        toggleTheme,
+        switchable,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

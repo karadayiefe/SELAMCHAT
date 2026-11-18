@@ -222,6 +222,7 @@
     background-repeat: repeat;
     opacity: 0;
     filter: saturate(0.9) contrast(1.04);
+    animation: cat-tile-drift 22s linear infinite;
     transition: opacity 500ms ease;
   }
 
@@ -340,6 +341,12 @@
     min-width: 0;
   }
 
+  .settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
   .settings-trigger {
     display: inline-flex;
     align-items: center;
@@ -361,6 +368,31 @@
     color: var(--text);
     border-color: var(--line-strong);
     background: var(--soft-surface-hover);
+    transform: translateY(-1px);
+  }
+
+  .cat-sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.34rem;
+    min-height: 2rem;
+    padding: 0.35rem 0.58rem;
+    border: 1px solid rgba(200, 59, 36, 0.34);
+    border-radius: 999px;
+    color: var(--text-dim);
+    background: rgba(255, 248, 239, 0.62);
+    font-size: 0.7rem;
+    font-weight: 650;
+    white-space: nowrap;
+    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .cat-sound-toggle:hover,
+  .cat-sound-toggle[aria-pressed="true"] {
+    color: #a52e20;
+    border-color: rgba(200, 59, 36, 0.55);
+    background: rgba(255, 226, 191, 0.82);
     transform: translateY(-1px);
   }
 
@@ -1126,6 +1158,11 @@
 
   :root[data-theme="cat"] :is(.btn, .settings-trigger, .theme-option, .beta-easter-egg):focus-visible {
     outline-color: #c83b24;
+  }
+
+  @keyframes cat-tile-drift {
+    from { background-position: 0 0; }
+    to { background-position: -13rem 0; }
   }
 
   @keyframes soft-pulse {

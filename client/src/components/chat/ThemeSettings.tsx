@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Moon, Settings2, Sparkles, Sun } from "lucide-react";
+import { Check, Moon, Settings2, Sparkles, Sun, Volume2, VolumeX } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import {
   Dialog,
@@ -17,20 +17,35 @@ const options: { id: Theme; label: string; description: string; icon: typeof Moo
 
 export function ThemeSettings() {
   const [open, setOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isCatMode, catSoundEnabled, toggleCatSound } = useTheme();
 
   return (
     <>
-      <button
-        type="button"
-        className="settings-trigger"
-        onClick={() => setOpen(true)}
-        aria-label="Ayarları aç"
-        title="Ayarlar"
-      >
-        <Settings2 size={16} aria-hidden="true" />
-        <span>Ayarlar</span>
-      </button>
+      <div className="settings-actions">
+        <button
+          type="button"
+          className="settings-trigger"
+          onClick={() => setOpen(true)}
+          aria-label="Ayarları aç"
+          title="Ayarlar"
+        >
+          <Settings2 size={16} aria-hidden="true" />
+          <span>Ayarlar</span>
+        </button>
+        {isCatMode && (
+          <button
+            type="button"
+            className="cat-sound-toggle"
+            onClick={toggleCatSound}
+            aria-pressed={catSoundEnabled}
+            aria-label={catSoundEnabled ? "Kedi müziğini kapat" : "Kedi müziğini aç"}
+            title={catSoundEnabled ? "Kedi müziğini kapat" : "Kedi müziğini aç"}
+          >
+            {catSoundEnabled ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
+            <span>{catSoundEnabled ? "Ses açık" : "Ses kapalı"}</span>
+          </button>
+        )}
+      </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="settings-dialog">
           <DialogHeader>
