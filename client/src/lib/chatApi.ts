@@ -9,6 +9,7 @@ export type Identity = {
 
 export type ChatMessage = {
   id: number;
+  clientId: string | null;
   body: string;
   mine: boolean;
   senderName: string;
@@ -17,6 +18,12 @@ export type ChatMessage = {
   createdAt: string;
   deliveredAt: string | null;
   readAt: string | null;
+  sendState?: "sending" | "failed";
+};
+
+export type RoomCardData = {
+  animals: [Identity, Identity];
+  code: string;
 };
 
 export type ChatState = {
@@ -24,6 +31,7 @@ export type ChatState = {
   status: ChatStatus;
   roomId: number | null;
   roomCode: string | null;
+  roomCard: RoomCardData | null;
   me: Identity;
   partner: Identity | null;
   partnerTyping: boolean;
@@ -60,7 +68,7 @@ export const chatApi = {
   state: (token: string) => post("state", { token }),
   join: (token: string) => post("join", { token }),
   leave: (token: string) => post("leave", { token }),
-  message: (token: string, body: string) => post("message", { token, body }),
+  message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
   typing: (token: string) => post("typing", { token }),
   bye: (token: string) => post("bye", { token }),
 };

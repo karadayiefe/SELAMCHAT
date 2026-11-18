@@ -1,4 +1,5 @@
 import { and, asc, eq, getTableColumns, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { randomInt } from "node:crypto";
 import { nanoid } from "nanoid";
 import { messages, participants, rooms } from "../drizzle/schema.js";
 import { getDb } from "./db.js";
@@ -9,25 +10,30 @@ import { getDb } from "./db.js";
  * Design notes:
  * - No accounts, no profiles. A visitor is a row with a random animal identity
  *   and a secret token kept in the browser.
- * - Presence is a heartbeat (`lastSeen`). Only fresh rows are counted, so the
- *   live counters always reflect real connected students.
- * - Messages live only while a room is active. Every exit path (button, tab
- *   close, crash, sweeper) deletes the room's messages immediately.
+ * - Presence is a visibility-aware lease (`lastSeen`). Hidden tabs receive a
+ *   long mobile-suspension grace before being considered disconnected.
+ * - Messages live only while a room is active. Button/pagehide exits close and
+ *   delete immediately; a lost connection is cleaned after its lease expires.
  */
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** A foreground peer is considered disconnected after five seconds without a heartbeat. */
-export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 5;
-/** Hidden tabs get extra time because mobile browsers throttle or suspend background timers. */
-export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
+/** A missed foreground heartbeat is tolerated; only a sustained outage ends the room. */
+export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 30;
+/** Mobile tabs may be frozen for a long time while the phone is locked or another app is open. */
+export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30 * 60;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
 }
 
 export function createRoomCode() {
-  return nanoid(10).toUpperCase();
+  const digits = randomInt(0, 1_000_000_000).toString().padStart(9, "0");
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function isFormattedRoomCode(code: string | null): code is string {
+  return Boolean(code && /^\d{3}-\d{3}-\d{3}$/.test(code));
 }
 
 /** Safety net: messages of a closed room are always wiped. */
@@ -112,6 +118,7 @@ export type Identity = {
 
 export type ChatMessage = {
   id: number;
+  clientId: string | null;
   body: string;
   mine: boolean;
   senderName: string;
@@ -127,6 +134,7 @@ export type ChatState = {
   status: ChatStatus;
   roomId: number | null;
   roomCode: string | null;
+  roomCard: { animals: [Identity, Identity]; code: string } | null;
   me: Identity;
   partner: Identity | null;
   partnerTyping: boolean;
@@ -459,11 +467,15 @@ function allowMessage(token: string): boolean {
 
 export async function sendMessage(
   token: string,
-  rawBody: unknown
+  rawBody: unknown,
+  rawClientId: unknown
 ): Promise<{ ok: boolean; error?: string }> {
   const body = cleanBody(rawBody);
   if (!body) return { ok: false, error: "empty_message" };
-  if (!allowMessage(token)) return { ok: false, error: "too_fast" };
+  const clientId = typeof rawClientId === "string" && /^[A-Za-z0-9_-]{16,36}$/.test(rawClientId)
+    ? rawClientId
+    : null;
+  if (!clientId) return { ok: false, error: "invalid_message_id" };
 
   const d = await db();
   const me = await findByToken(d, token);
@@ -493,7 +505,15 @@ export async function sendMessage(
       return false;
     }
 
-    await tx.insert(messages).values({ roomId, senderId: me.id, body });
+    const duplicate = await tx
+      .select({ id: messages.id })
+      .from(messages)
+      .where(and(eq(messages.senderId, me.id), eq(messages.clientId, clientId)))
+      .limit(1);
+    if (duplicate.length > 0) return "sent" as const;
+    if (!allowMessage(token)) return "too_fast" as const;
+
+    await tx.insert(messages).values({ roomId, senderId: me.id, clientId, body });
     await tx
       .update(rooms)
       .set({ lastActivity: sql`NOW()` })
@@ -511,10 +531,11 @@ export async function sendMessage(
         ) AS keep_rows
       )`
     );
-    return true;
+    return "sent" as const;
   });
 
-  return inserted ? { ok: true } : { ok: false, error: "chat_closed" };
+  if (inserted === "too_fast") return { ok: false, error: "too_fast" };
+  return inserted === "sent" ? { ok: true } : { ok: false, error: "chat_closed" };
 }
 
 export async function setTyping(token: string): Promise<void> {
@@ -536,7 +557,7 @@ export async function setVisibility(
   const d = await db();
   await d
     .update(participants)
-    .set({ isHidden, visibilityVersion: version })
+    .set({ isHidden, visibilityVersion: version, lastSeen: sql`NOW()` })
     .where(
       and(
         eq(participants.token, token),
@@ -605,7 +626,9 @@ export async function sweep(force = false): Promise<void> {
   );
 
   // Forget visitors that are long gone (identity is re-assigned on return).
-  await d.delete(participants).where(sql`participants.lastSeen < ${nowSecondsAgo(600)}`);
+  await d.delete(participants).where(
+    and(isNull(participants.roomId), sql`participants.lastSeen < ${nowSecondsAgo(600)}`)
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -658,6 +681,7 @@ export async function getState(token: string): Promise<ChatState | null> {
   let partner: (Identity & { typing: boolean }) | null = null;
   let rows: ChatMessage[] = [];
   let roomCode: string | null = null;
+  let roomCard: ChatState["roomCard"] = null;
 
   if (me.roomId) {
     const roomId = me.roomId;
@@ -670,6 +694,7 @@ export async function getState(token: string): Promise<ChatState | null> {
             status: "chatting" as const,
             partner: null,
             roomCode: null,
+            roomCard: null,
             messages: [] as ChatMessage[],
             retry: true,
           };
@@ -678,6 +703,7 @@ export async function getState(token: string): Promise<ChatState | null> {
           status: current?.status === "partner_left" ? ("partner_left" as const) : ("idle" as const),
           partner: null,
           roomCode: null,
+          roomCard: null,
           messages: [] as ChatMessage[],
           retry: false,
         };
@@ -697,7 +723,21 @@ export async function getState(token: string): Promise<ChatState | null> {
           .update(participants)
           .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
           .where(eq(participants.roomId, roomId));
-        return { status: "partner_left" as const, partner: null, roomCode: null, messages: [] as ChatMessage[], retry: false };
+        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+      }
+
+      let sharedCode = room.publicCode;
+      if (!isFormattedRoomCode(sharedCode)) {
+        sharedCode = createRoomCode();
+        await tx.update(rooms).set({ publicCode: sharedCode }).where(eq(rooms.id, roomId));
+      }
+      const sharedAnimals = lockedMembers
+        .filter(row => row.roomId === roomId && row.status === "chatting")
+        .sort((a, b) => a.id - b.id)
+        .map(identityOf);
+      if (sharedAnimals.length !== 2) {
+        await closeRoom(tx, roomId, current.id);
+        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
 
       const partnerRows = await tx
@@ -723,7 +763,7 @@ export async function getState(token: string): Promise<ChatState | null> {
       if (!partnerRow || !partnerFresh) {
         // Heartbeat timeout is treated exactly like a deliberate leave.
         await closeRoom(tx, roomId, partnerRow?.id ?? -1);
-        return { status: "partner_left" as const, partner: null, roomCode: null, messages: [] as ChatMessage[], retry: false };
+        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
 
       const peerMessages = and(eq(messages.roomId, roomId), ne(messages.senderId, current.id));
@@ -745,6 +785,7 @@ export async function getState(token: string): Promise<ChatState | null> {
       const messageRows = await tx
         .select({
           id: messages.id,
+          clientId: messages.clientId,
           body: messages.body,
           senderId: messages.senderId,
           createdAt: messages.createdAt,
@@ -763,10 +804,15 @@ export async function getState(token: string): Promise<ChatState | null> {
       return {
         status: "chatting" as const,
         partner: { ...identityOf(partnerRow), typing: Boolean(Number(partnerRow.typing)) },
-        roomCode: room.publicCode,
+        roomCode: sharedCode,
+        roomCard: {
+          animals: [sharedAnimals[0], sharedAnimals[1]] as [Identity, Identity],
+          code: sharedCode,
+        },
         retry: false,
         messages: messageRows.map(row => ({
           id: row.id,
+          clientId: row.clientId,
           body: row.body,
           mine: row.senderId === current.id,
           senderName: row.senderName,
@@ -782,6 +828,7 @@ export async function getState(token: string): Promise<ChatState | null> {
     status = snapshot.status;
     partner = snapshot.partner;
     roomCode = snapshot.roomCode;
+    roomCard = snapshot.roomCard;
     rows = snapshot.messages;
     me = (await findByToken(d, token)) ?? me;
     if (snapshot.retry) return getState(token);
@@ -815,6 +862,7 @@ export async function getState(token: string): Promise<ChatState | null> {
     status,
     roomId: status === "chatting" ? me.roomId : null,
     roomCode: status === "chatting" ? roomCode : null,
+    roomCard: status === "chatting" ? roomCard : null,
     me: identityOf(me),
     partner: partner ? { animalKey: partner.animalKey, name: partner.name, emoji: partner.emoji, color: partner.color } : null,
     partnerTyping: partner?.typing ?? false,

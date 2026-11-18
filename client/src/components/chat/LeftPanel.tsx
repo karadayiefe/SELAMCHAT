@@ -6,10 +6,12 @@ export function LeftPanel({
   me,
   busy,
   onFindNew,
+  message,
 }: {
   me: Identity;
   busy: boolean;
   onFindNew: () => void;
+  message: string;
 }) {
   return (
     <section className="panel-body fade-up">
@@ -26,17 +28,17 @@ export function LeftPanel({
         </span>
         <div className="min-w-0">
           <h2 className="font-display text-[1.15rem] leading-snug font-semibold">
-            Karşı taraf sohbetten ayrıldı, sohbet temizlendi
+            {message}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--text-dim)]">
-            Bu odadaki tüm mesajlar kalıcı olarak silindi. Geride hiçbir kayıt kalmadı.
+            Sohbet geçmişi silindi.
           </p>
         </div>
       </div>
 
       <button type="button" className="btn btn-primary mt-6 w-full" onClick={onFindNew} disabled={busy}>
         <RotateCw size={16} strokeWidth={2.4} aria-hidden="true" />
-        {busy ? "Aranıyor…" : "Yeni Kişi Bul"}
+        {busy ? "Aranıyor…" : "Yeni kişi bul"}
       </button>
 
       <div className="mt-4 flex items-center gap-2 text-xs text-[color:var(--text-dim)]">

@@ -12,7 +12,7 @@ import {
 const options: { id: Theme; label: string; description: string; icon: typeof Moon }[] = [
   { id: "dark", label: "Koyu", description: "", icon: Moon },
   { id: "light", label: "Açık", description: "", icon: Sun },
-  { id: "vice-city", label: "GTA 6 · Vice City", description: "Özel tema", icon: Sparkles },
+  { id: "vice-city", label: "GTA 6 · Vice City", description: "GTA 6 çıkışına özel", icon: Sparkles },
 ];
 
 export function ThemeSettings() {

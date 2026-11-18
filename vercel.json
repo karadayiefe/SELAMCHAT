@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "test -n \"$DATABASE_URL\" && pnpm db:migrate && pnpm run build:static",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then test -n \"$DATABASE_URL\" && pnpm db:migrate; fi && pnpm run build:static",
   "outputDirectory": "dist/public",
   "rewrites": [
     {

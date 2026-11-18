@@ -1,12 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { chatApi, type ChatMessage, type ChatState, type ChatStatus } from "@/lib/chatApi";
+import { mergeUnconfirmedMessages } from "@/lib/chatState";
 
 const TOKEN_KEY = "mukchat.token";
+const RELOAD_MATCH_KEY = "mukalchat.reload-match";
 /** Keep search open long enough for students to join without using the chat-leave timeout. */
 const NO_ONE_AFTER_SECONDS = 30;
 
-function delayFor(hidden: boolean) {
-  return hidden ? 2500 : 1000;
+function delayFor(hidden: boolean, status: ChatStatus) {
+  if (hidden) return 10_000;
+  return status === "chatting" || status === "waiting" ? 1000 : 2500;
+}
+
+function createSessionToken() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function createClientMessageId() {
+  return createSessionToken();
 }
 
 function readStoredToken(): string | null {
@@ -32,12 +46,14 @@ export function useChat() {
 
   const tokenRef = useRef<string | null>(null);
   const statusRef = useRef<ChatStatus>("idle");
+  const pageLeavingRef = useRef(false);
   const meRef = useRef<ChatState["me"] | null>(null);
   const stateRef = useRef<ChatState | null>(null);
   const endedRoomIdsRef = useRef(new Set<number>());
   const lifecycleRef = useRef(0);
   const typingSentAt = useRef(0);
   const waitStartedAt = useRef<number | null>(null);
+  const optimisticIdRef = useRef(0);
 
   const apply = useCallback((next: ChatState | null | undefined) => {
     if (!next) return;
@@ -60,18 +76,21 @@ export function useChat() {
       return;
     }
 
+    const stateToApply = mergeUnconfirmedMessages(previous, next);
+
     const safeState =
-      next.status === "chatting"
-        ? next
-        : { ...next, roomId: null, roomCode: null, partner: null, partnerTyping: false, messages: [] };
+      stateToApply.status === "chatting"
+        ? stateToApply
+        : { ...stateToApply, roomId: null, roomCode: null, roomCard: null, partner: null, partnerTyping: false, messages: [] };
     stateRef.current = safeState;
     tokenRef.current = safeState.token;
     statusRef.current = safeState.status;
     meRef.current = safeState.me;
     try {
-      // Kept per tab: a reload preserves the identity, while a second tab gets
-      // its own anonymous student instead of sharing one chat session.
+      // Kept per tab while this document is alive; pagehide rotates the token.
       sessionStorage.setItem(TOKEN_KEY, safeState.token);
+      if (safeState.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
+      else sessionStorage.removeItem(RELOAD_MATCH_KEY);
     } catch {
       /* storage can be unavailable in private mode */
     }
@@ -84,6 +103,13 @@ export function useChat() {
     let timeoutId: number | undefined;
     let wakeSleep: (() => void) | null = null;
     let lastVisibilityVersion = 0;
+    const navigationType = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    let rejoinAfterReload = false;
+    try {
+      rejoinAfterReload = navigationType?.type === "reload" && sessionStorage.getItem(RELOAD_MATCH_KEY) === "1";
+      sessionStorage.removeItem(RELOAD_MATCH_KEY);
+      if (rejoinAfterReload) sessionStorage.removeItem(TOKEN_KEY);
+    } catch { /* A fresh identity is best-effort when storage is blocked. */ }
 
     const sleep = (ms: number) =>
       new Promise<void>(resolve => {
@@ -101,11 +127,24 @@ export function useChat() {
       let announcedReady = false;
 
       const establish = async () => {
+        if (pageLeavingRef.current) return;
         try {
-          const res = await chatApi.session(readStoredToken());
-          if (cancelled) return;
+          let token = readStoredToken();
+          if (!token) {
+            token = createSessionToken();
+            try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* Server still issues a session. */ }
+          }
+          const res = await chatApi.session(token);
+          if (cancelled || pageLeavingRef.current) return;
           if (res.ok && res.state) {
-            apply(res.state);
+            if (rejoinAfterReload) {
+              const joined = await chatApi.join(res.token ?? res.state.token);
+              if (joined.ok && joined.state) apply(joined.state);
+              else apply(res.state);
+              rejoinAfterReload = false;
+            } else {
+              apply(res.state);
+            }
             setConnectionIssue(false);
             reportVisibility();
           } else {
@@ -122,13 +161,13 @@ export function useChat() {
 
       await establish();
 
-      while (!cancelled) {
+      while (!cancelled && !pageLeavingRef.current) {
         const token = tokenRef.current;
 
         // No session yet (first load failed or the visitor was swept): retry.
         if (!token) {
           await sleep(1500);
-          if (cancelled) break;
+          if (cancelled || pageLeavingRef.current) break;
           await establish();
           continue;
         }
@@ -137,7 +176,7 @@ export function useChat() {
         const lifecycle = lifecycleRef.current;
         try {
           const res = await chatApi.state(token);
-          if (cancelled) break;
+          if (cancelled || pageLeavingRef.current) break;
           if (lifecycle !== lifecycleRef.current) continue;
 
           if (res.ok && res.state) {
@@ -145,18 +184,20 @@ export function useChat() {
             setConnectionIssue(false);
           } else if (res.error === "no_session") {
             const fresh = await chatApi.session(null);
-            if (!cancelled && lifecycle === lifecycleRef.current && fresh.ok) apply(fresh.state);
+            if (!cancelled && !pageLeavingRef.current && lifecycle === lifecycleRef.current && fresh.ok) apply(fresh.state);
           }
         } catch {
           if (!cancelled) setConnectionIssue(true);
         }
 
-        const remainingDelay = delayFor(document.hidden) - (performance.now() - pollStartedAt);
+        if (pageLeavingRef.current) break;
+        const remainingDelay = delayFor(document.hidden, statusRef.current) - (performance.now() - pollStartedAt);
         if (remainingDelay > 0) await sleep(remainingDelay);
       }
     };
 
     const reportVisibility = () => {
+      if (pageLeavingRef.current) return;
       const token = tokenRef.current;
       if (token) {
         let version = Math.max(Date.now(), lastVisibilityVersion + 1);
@@ -222,17 +263,33 @@ export function useChat() {
     if (state?.status === "chatting" || state?.status === "waiting") setNotice(null);
   }, [state?.status]);
 
-  // Tell the server when the tab is closed so the partner is released at once.
+  // pagehide is the exit signal; visibilitychange only updates hidden/visible presence.
   useEffect(() => {
     const bye = (event: PageTransitionEvent) => {
       if (event.persisted) return;
       const token = tokenRef.current;
       if (!token) return;
+      pageLeavingRef.current = true;
+      lifecycleRef.current += 1;
       try {
-        const payload = new Blob([JSON.stringify({ token })], { type: "application/json" });
-        navigator.sendBeacon("/api/chat/bye", payload);
-      } catch {
-        /* beacon unsupported: the server sweeper still cleans up */
+        if (stateRef.current?.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
+        else sessionStorage.removeItem(RELOAD_MATCH_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+      } catch { /* Exit notification is still attempted without storage. */ }
+      const body = JSON.stringify({ token });
+      const payload = new Blob([body], { type: "application/json" });
+      let queued = false;
+      try {
+        if (typeof navigator.sendBeacon === "function") queued = navigator.sendBeacon("/api/chat/bye", payload);
+      } catch { /* Fall through to a keepalive fetch. */ }
+      if (!queued) {
+        void fetch("/api/chat/bye", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          credentials: "same-origin",
+          keepalive: true,
+        }).catch(() => undefined);
       }
     };
 
@@ -262,18 +319,20 @@ export function useChat() {
     const lifecycle = ++lifecycleRef.current;
     const previous = stateRef.current;
     if (previous?.status === "chatting") {
-      setNotice("Sohbeti bitirdin, sohbet temizlendi.");
+      setNotice("Sohbeti bitirdin. Her şey silindi.");
     }
     if (previous?.roomId !== null && previous?.roomId !== undefined) {
       endedRoomIdsRef.current.add(previous.roomId);
     }
     statusRef.current = "idle";
+    try { sessionStorage.removeItem(RELOAD_MATCH_KEY); } catch { /* Storage can be unavailable. */ }
     if (previous) {
       const cleared: ChatState = {
         ...previous,
         status: "idle",
         roomId: null,
         roomCode: null,
+        roomCard: null,
         partner: null,
         partnerTyping: false,
         messages: [],
@@ -293,36 +352,83 @@ export function useChat() {
   }, [apply]);
 
   const send = useCallback(
-    async (raw: string) => {
+    async (raw: string, retryClientId?: string) => {
       const token = tokenRef.current;
       const body = raw.trim();
       if (!token || !body || statusRef.current !== "chatting") return false;
       const lifecycle = lifecycleRef.current;
+      const clientId = retryClientId ?? createClientMessageId();
 
       const me = meRef.current;
-      if (me && stateRef.current) {
-        const optimistic: ChatMessage = {
-          id: -Date.now(),
-          body,
-          mine: true,
-          senderName: me.name,
-          senderEmoji: me.emoji,
-          senderColor: me.color,
-          createdAt: new Date().toISOString(),
-          deliveredAt: null,
-          readAt: null,
+      const currentState = stateRef.current;
+      if (me && currentState) {
+        const existing = currentState.messages.find(message => message.clientId === clientId);
+        const optimistic: ChatMessage = existing
+          ? { ...existing, sendState: "sending" }
+          : {
+              id: -(++optimisticIdRef.current),
+              clientId,
+              body,
+              mine: true,
+              senderName: me.name,
+              senderEmoji: me.emoji,
+              senderColor: me.color,
+              createdAt: new Date().toISOString(),
+              deliveredAt: null,
+              readAt: null,
+              sendState: "sending",
+            };
+        const optimisticState = {
+          ...currentState,
+          messages: existing
+            ? currentState.messages.map(message => message.clientId === clientId ? optimistic : message)
+            : [...currentState.messages, optimistic],
         };
-        const optimisticState = { ...stateRef.current, messages: [...stateRef.current.messages, optimistic] };
         stateRef.current = optimisticState;
         setState(optimisticState);
       }
 
+      const markFailed = () => {
+        const latest = stateRef.current;
+        if (!latest || latest.status !== "chatting") return;
+        const failedState = {
+          ...latest,
+          messages: latest.messages.map(message =>
+            message.clientId === clientId ? { ...message, sendState: "failed" as const } : message
+          ),
+        };
+        stateRef.current = failedState;
+        setState(failedState);
+      };
+      const markSent = () => {
+        const latest = stateRef.current;
+        if (!latest || latest.status !== "chatting") return;
+        const sentState = {
+          ...latest,
+          messages: latest.messages.map(message => {
+            if (message.clientId !== clientId) return message;
+            const { sendState: _sendState, ...sentMessage } = message;
+            return sentMessage;
+          }),
+        };
+        stateRef.current = sentState;
+        setState(sentState);
+      };
+
       try {
-        const res = await chatApi.message(token, body);
-        if (lifecycle === lifecycleRef.current && res.state) apply(res.state);
+        const res = await chatApi.message(token, body, clientId);
+        if (lifecycle !== lifecycleRef.current) return false;
+        if (res.ok) {
+          if (res.state) apply(res.state);
+          else markSent();
+          return true;
+        }
+        if (res.state && res.state.status !== "chatting") apply(res.state);
+        markFailed();
         if (res.error === "too_fast") setNotice("Çok hızlı yazıyorsun, bir saniye bekle.");
         return res.ok;
       } catch {
+        if (lifecycle === lifecycleRef.current) markFailed();
         setConnectionIssue(true);
         return false;
       }

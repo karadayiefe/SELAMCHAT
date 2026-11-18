@@ -9,12 +9,12 @@ import {
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("keeps the 30-second search window separate from visible and hidden chat disconnect windows", () => {
+  it("keeps the 30-second search window separate from tolerant visible and background chat leases", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
-    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(5);
-    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
-    expect(getPartnerTimeoutSeconds(false)).toBe(5);
-    expect(getPartnerTimeoutSeconds(true)).toBe(30);
+    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(30);
+    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30 * 60);
+    expect(getPartnerTimeoutSeconds(false)).toBe(30);
+    expect(getPartnerTimeoutSeconds(true)).toBe(30 * 60);
   });
 
   it("assigns unique, schema-safe animal identities", () => {
@@ -33,9 +33,9 @@ describe("anonymous chat configuration", () => {
     }
   });
 
-  it("generates unique ten-character temporary room codes", () => {
+  it("generates unique temporary room codes in XXX-XXX-XXX format", () => {
     const codes = Array.from({ length: 100 }, createRoomCode);
-    expect(codes.every(code => /^[A-Z0-9_-]{10}$/.test(code))).toBe(true);
+    expect(codes.every(code => /^\d{3}-\d{3}-\d{3}$/.test(code))).toBe(true);
     expect(new Set(codes).size).toBe(codes.length);
   });
 });

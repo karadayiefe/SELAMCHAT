@@ -1,21 +1,29 @@
 import { IdentityTile } from "@/components/chat/Brand";
 import type { ChatMessage, Identity } from "@/lib/chatApi";
-import { ArrowUp, Check, CheckCheck, Clock3, Copy, LogOut } from "lucide-react";
+import { ArrowUp, Check, CheckCheck, Clock3, LogOut, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-function Bubble({ message }: { message: ChatMessage }) {
+function Bubble({
+  message,
+  onRetry,
+}: {
+  message: ChatMessage;
+  onRetry: (body: string, clientId: string) => void;
+}) {
   const color = message.senderColor;
   const sentAt = new Date(message.createdAt);
   const timeLabel = Number.isNaN(sentAt.getTime())
     ? ""
     : new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(sentAt);
-  const receipt = message.id < 0
+  const receipt = message.sendState === "sending"
     ? { label: "Gönderiliyor", className: "receipt--sending", icon: Clock3 }
-    : message.readAt
-      ? { label: "Okundu", className: "receipt--read", icon: CheckCheck }
-      : message.deliveredAt
-        ? { label: "İletildi", className: "receipt--delivered", icon: CheckCheck }
-        : { label: "Gönderildi", className: "receipt--sent", icon: Check };
+    : message.sendState === "failed"
+      ? { label: "Gönderilemedi", className: "receipt--failed", icon: RotateCcw }
+      : message.readAt
+        ? { label: "Okundu", className: "receipt--read", icon: CheckCheck }
+        : message.deliveredAt
+          ? { label: "İletildi", className: "receipt--delivered", icon: CheckCheck }
+          : { label: "Gönderildi", className: "receipt--sent", icon: Check };
   const ReceiptIcon = receipt.icon;
 
   return (
@@ -23,17 +31,13 @@ function Bubble({ message }: { message: ChatMessage }) {
       <span className="bubble-meta" style={{ color }}>
         <span aria-hidden="true">{message.senderEmoji}</span>
         {message.senderName}
-        {message.mine && (
-          <span className="font-normal text-[color:var(--text-dim)]">· sen</span>
-        )}
+        {message.mine && <span className="font-normal text-[color:var(--text-dim)]">· sen</span>}
       </span>
       <div
         className="bubble"
-        style={
-          message.mine
-            ? { background: `${color}22`, borderColor: `${color}48` }
-            : { background: "rgba(255,255,255,0.045)", borderColor: `${color}33` }
-        }
+        style={message.mine
+          ? { background: `${color}22`, borderColor: `${color}48` }
+          : { background: "rgba(255,255,255,0.045)", borderColor: `${color}33` }}
       >
         {message.body}
       </div>
@@ -46,6 +50,11 @@ function Bubble({ message }: { message: ChatMessage }) {
           </span>
         )}
       </div>
+      {message.mine && message.sendState === "failed" && message.clientId && (
+        <button type="button" className="message-retry" onClick={() => onRetry(message.body, message.clientId!)}>
+          <RotateCcw size={12} aria-hidden="true" /> Yeniden dene
+        </button>
+      )}
     </div>
   );
 }
@@ -53,7 +62,6 @@ function Bubble({ message }: { message: ChatMessage }) {
 export function ChatPanel({
   me,
   partner,
-  roomCode,
   messages,
   partnerTyping,
   busy,
@@ -63,16 +71,14 @@ export function ChatPanel({
 }: {
   me: Identity;
   partner: Identity;
-  roomCode: string | null;
   messages: ChatMessage[];
   partnerTyping: boolean;
   busy: boolean;
-  onSend: (body: string) => Promise<boolean>;
+  onSend: (body: string, clientId?: string) => Promise<boolean>;
   onLeave: () => void;
   onTyping: () => void;
 }) {
   const [text, setText] = useState("");
-  const [copiedCode, setCopiedCode] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -96,18 +102,6 @@ export function ChatPanel({
     inputRef.current?.focus();
   };
 
-  const copyRoomCode = async () => {
-    if (!roomCode) return;
-    const shareText = `${me.emoji} ${me.name} × ${partner.emoji} ${partner.name} · ${roomCode}`;
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setCopiedCode(true);
-      window.setTimeout(() => setCopiedCode(false), 1500);
-    } catch {
-      setCopiedCode(false);
-    }
-  };
-
   return (
     <section className="chat-shell fade-up">
       <header className="chat-head">
@@ -115,10 +109,7 @@ export function ChatPanel({
           <IdentityTile identity={partner} small />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span
-                className="truncate font-display text-[0.98rem] font-semibold"
-                style={{ color: partner.color }}
-              >
+              <span className="truncate font-display text-[0.98rem] font-semibold" style={{ color: partner.color }}>
                 {partner.name}
               </span>
               <span aria-hidden="true">{partner.emoji}</span>
@@ -130,29 +121,11 @@ export function ChatPanel({
           </div>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-danger btn-sm shrink-0"
-          onClick={onLeave}
-          disabled={busy}
-        >
+        <button type="button" className="btn btn-danger btn-sm shrink-0" onClick={onLeave} disabled={busy}>
           <LogOut size={14} strokeWidth={2.4} aria-hidden="true" />
-          Sohbetten Ayrıl
+          Ayrıl
         </button>
       </header>
-
-      {roomCode && (
-        <div className="room-code-strip">
-          <span className="room-code-animals" aria-label={`${me.name} ile ${partner.name}`}>
-            {me.emoji} {me.name} <span aria-hidden="true">×</span> {partner.emoji} {partner.name}
-          </span>
-          <button type="button" className="room-code-copy" onClick={() => void copyRoomCode()} aria-label="Sohbet kodunu kopyala" title="Sohbet kodunu kopyala">
-            <span className="room-code-label">{copiedCode ? "Kopyalandı" : "Kod"}</span>
-            <code>{roomCode}</code>
-            <Copy size={13} aria-hidden="true" />
-          </button>
-        </div>
-      )}
 
       <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 && (
@@ -164,7 +137,11 @@ export function ChatPanel({
         )}
 
         {messages.map(message => (
-          <Bubble key={message.id} message={message} />
+          <Bubble
+            key={message.clientId ?? message.id}
+            message={message}
+            onRetry={(body, clientId) => void onSend(body, clientId)}
+          />
         ))}
 
         {partnerTyping && (
@@ -211,13 +188,7 @@ export function ChatPanel({
             }
           }}
         />
-        <button
-          type="button"
-          className="send-btn"
-          onClick={() => void submit()}
-          disabled={!text.trim()}
-          aria-label="Gönder"
-        >
+        <button type="button" className="send-btn" onClick={() => void submit()} disabled={!text.trim()} aria-label="Gönder">
           <ArrowUp size={18} strokeWidth={2.6} aria-hidden="true" />
         </button>
       </div>

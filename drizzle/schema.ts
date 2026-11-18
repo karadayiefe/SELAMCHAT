@@ -74,12 +74,16 @@ export const messages = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     roomId: int("roomId").notNull(),
     senderId: int("senderId").notNull(),
+    clientId: varchar("clientId", { length: 36 }),
     body: varchar("body", { length: 600 }).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     deliveredAt: timestamp("deliveredAt"),
     readAt: timestamp("readAt"),
   },
-  table => [index("idx_messages_room").on(table.roomId, table.id)]
+  table => [
+    index("idx_messages_room").on(table.roomId, table.id),
+    uniqueIndex("uq_messages_sender_client").on(table.senderId, table.clientId),
+  ]
 );
 
 export type Room = typeof rooms.$inferSelect;

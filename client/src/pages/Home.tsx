@@ -1,5 +1,6 @@
 import { LiveCounters, Wordmark } from "@/components/chat/Brand";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { RoomCard } from "@/components/chat/RoomCard";
 import { IdlePanel } from "@/components/chat/IdlePanel";
 import { LeftPanel } from "@/components/chat/LeftPanel";
 import { WaitingPanel } from "@/components/chat/WaitingPanel";
@@ -24,6 +25,7 @@ export default function Home() {
   const status = state?.status ?? "idle";
   const online = state?.counters.online ?? 0;
   const activeChats = state?.counters.activeChats ?? 0;
+  const ownLeaveNotice = status === "idle" && notice === "Sohbeti bitirdin. Her şey silindi.";
 
   return (
     <div className="page-shell">
@@ -60,7 +62,7 @@ export default function Home() {
             key={status === "chatting" ? `chat-${state.roomId ?? "none"}` : status}
             className="state-panel-enter w-full"
           >
-            {notice && (
+            {notice && !ownLeaveNotice && (
               <div className="px-4 pt-4">
                 <div className="notice">
                   <span>{notice}</span>
@@ -69,17 +71,19 @@ export default function Home() {
             )}
 
             {status === "chatting" && state.partner ? (
-              <ChatPanel
-                me={state.me}
-                partner={state.partner}
-                roomCode={state.roomCode}
-                messages={state.messages}
-                partnerTyping={state.partnerTyping}
-                busy={busy}
-                onSend={send}
-                onLeave={() => void leave()}
-                onTyping={notifyTyping}
-              />
+              <div className="chat-layout">
+                <ChatPanel
+                  me={state.me}
+                  partner={state.partner}
+                  messages={state.messages}
+                  partnerTyping={state.partnerTyping}
+                  busy={busy}
+                  onSend={send}
+                  onLeave={() => void leave()}
+                  onTyping={notifyTyping}
+                />
+                {state.roomCard && <RoomCard card={state.roomCard} />}
+              </div>
             ) : status === "waiting" ? (
               <WaitingPanel
                 me={state.me}
@@ -89,7 +93,9 @@ export default function Home() {
                 onCancel={() => void leave()}
               />
             ) : status === "partner_left" ? (
-              <LeftPanel me={state.me} busy={busy} onFindNew={() => void join()} />
+              <LeftPanel message="Karşıdaki kişi ayrıldı." me={state.me} busy={busy} onFindNew={() => void join()} />
+            ) : ownLeaveNotice ? (
+              <LeftPanel message="Sohbeti bitirdin. Her şey silindi." me={state.me} busy={busy} onFindNew={() => void join()} />
             ) : (
               <IdlePanel me={state.me} busy={busy} onStart={() => void join()} />
             )}

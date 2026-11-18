@@ -113,7 +113,7 @@ export function registerChatRoutes(app: Express) {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
       const body = (req.body ?? {}) as Record<string, unknown>;
-      const result = await sendMessage(token, body.body);
+      const result = await sendMessage(token, body.body, body.clientId);
       const state = await getState(token);
       return { ...result, state };
     })
