@@ -1016,9 +1016,6 @@
     overflow: hidden;
     border-color: var(--line-strong);
     background-color: var(--surface);
-    background-image: linear-gradient(rgba(8, 9, 12, 0.76), rgba(8, 9, 12, 0.9)), url("/vice-city-changelog.webp");
-    background-position: center;
-    background-size: cover;
     color: var(--text);
   }
 
@@ -1120,6 +1117,34 @@
     background: color-mix(in srgb, var(--surface) 76%, transparent);
     box-shadow: 0 18px 44px -32px var(--accent-shadow);
     backdrop-filter: blur(14px);
+  }
+
+  .changelog-entry--vice-city,
+  .changelog-entry--cat {
+    background-position: center;
+    background-size: cover;
+    color: #fff8f2;
+  }
+
+  .changelog-entry--vice-city {
+    background-image: linear-gradient(rgba(20, 8, 32, 0.58), rgba(20, 8, 32, 0.86)), url("/vice-city-changelog.webp");
+  }
+
+  .changelog-entry--cat {
+    background-image: linear-gradient(rgba(22, 14, 10, 0.48), rgba(22, 14, 10, 0.82)), url("/cat-easter-egg.jpg");
+  }
+
+  .changelog-entry--vice-city .changelog-version,
+  .changelog-entry--cat .changelog-version,
+  .changelog-entry--vice-city .changelog-date,
+  .changelog-entry--cat .changelog-date,
+  .changelog-entry--vice-city h2,
+  .changelog-entry--cat h2,
+  .changelog-entry--vice-city > p,
+  .changelog-entry--cat > p,
+  .changelog-entry--vice-city li,
+  .changelog-entry--cat li {
+    color: #fff8f2;
   }
 
   .changelog-entry-meta,

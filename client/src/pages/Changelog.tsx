@@ -2,7 +2,7 @@ import { CalendarDays, Check, Play } from "lucide-react";
 
 export const changes = [
   {
-    date: "16 Kasım 2026",
+    eyebrow: "CHANGELOG · 17 KASIM 2026",
     title: "HER ŞEYİN BAŞLANGICI",
     description:
       "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
@@ -14,32 +14,41 @@ export const changes = [
     ],
   },
   {
-    date: "17 Kasım 2026",
+    eyebrow: "CHANGELOG · 17 KASIM 2026",
     title: "İLK ADIM VE GELİŞTİRMELER",
     description:
       "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
     sectionLabel: "Bu gün gelenler:",
     details: [
-      "56 farklı hayvan eklendi.",
+      "56+ farklı hayvan eklendi.",
       "Sohbet bitince mesajlar temizleniyor.",
       "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor.",
     ],
   },
   {
-    date: "18 Kasım 2026",
+    eyebrow: "CHANGELOG · 18 KASIM 2026",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
     description:
       "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
-    sectionLabel: "Bu gün açılanlar:",
     details: [
-      "GTA 6 özel teması ve tema müziği eklendi.",
-      "GTA 6 temasından bağımsız ayrı bir civciv Easter egg'i saklandı.",
-      "Civcivi kendiniz bulun. Tıklayın, etrafı keşfedin; belki gizli civcivi ilk siz bulursunuz.",
+      "🌴 GTA 6 özel teması eklendi.",
+      "🎵 GTA 6 temasına özel müzik eklendi.",
     ],
     viceCity: true,
   },
   {
-    date: "18 Kasım 2026 · 23:00",
+    eyebrow: "GİZLİ EASTER EGG",
+    title: "🐈 BİR YERLERE KEDİ SAKLADIK!",
+    description: "Bir kedi teması Easter egg'i saklandı.",
+    details: [
+      "Temayı kendiniz bulun.",
+      "Tıklayın, etrafı keşfedin; belki gizli kedi temasını ilk siz bulursunuz.",
+    ],
+    cat: true,
+  },
+  {
+    eyebrow: "MUKALCHAT V1.0 BETA",
+    date: "18 KASIM 2026 · 23:00",
     title: "MUKALCHAT V1.0 BETA",
     description: "ŞU AN AÇILDI",
     details: ["18 Kasım 2026, saat 23:00 itibarıyla MUKALCHAT artık sizinle."],
@@ -55,13 +64,18 @@ export function ChangelogCards({ onSelectViceCity }: ChangelogCardsProps) {
   return (
     <div className="changelog-list">
       {changes.map(change => (
-        <article className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}`} key={`${change.date}-${change.title}`}>
+        <article
+          className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}${change.viceCity ? " changelog-entry--vice-city" : ""}${change.cat ? " changelog-entry--cat" : ""}`}
+          key={`${change.eyebrow}-${change.title}`}
+        >
           <div className="changelog-entry-meta">
-            <span className="changelog-version">{change.finale ? "MUKALCHAT V1.0 BETA" : "CHANGELOG"}</span>
-            <span className="changelog-date">
-              <CalendarDays size={14} aria-hidden="true" />
-              {change.date}
-            </span>
+            <span className="changelog-version">{change.eyebrow}</span>
+            {change.date && (
+              <span className="changelog-date">
+                <CalendarDays size={14} aria-hidden="true" />
+                {change.date}
+              </span>
+            )}
           </div>
           <h2>{change.title}</h2>
           <p className="changelog-entry-description">{change.description}</p>
