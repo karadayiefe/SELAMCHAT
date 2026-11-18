@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then previous=\"${VERCEL_GIT_PREVIOUS_COMMIT_SHA:-}\"; if [ -n \"$previous\" ] && git cat-file -e \"$previous^{commit}\" 2>/dev/null; then if ! git diff --quiet \"$previous\" \"$VERCEL_GIT_COMMIT_SHA\" -- drizzle; then if [ -n \"$DATABASE_URL\" ]; then pnpm db:migrate; fi; fi; elif [ -n \"$DATABASE_URL\" ]; then pnpm db:migrate; fi; fi && pnpm run build:static",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = production ] && [ -n \"$DATABASE_URL\" ] && ! git diff --quiet \"$VERCEL_GIT_PREVIOUS_COMMIT_SHA\" \"$VERCEL_GIT_COMMIT_SHA\" -- drizzle; then pnpm db:migrate; fi && pnpm run build:static",
   "outputDirectory": "dist/public",
   "rewrites": [
     {
