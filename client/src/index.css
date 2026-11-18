@@ -1239,6 +1239,10 @@
     box-shadow: 0 12px 28px rgba(8, 4, 17, 0.3), 0 0 22px rgba(201, 52, 155, 0.24);
   }
 
+  .changelog-music-button {
+    margin-top: 0.55rem;
+  }
+
   :root[data-theme="vice-city"] body {
     background-image:
       radial-gradient(ellipse 78% 46% at 50% -12%, rgba(123, 32, 143, 0.4), transparent 72%),

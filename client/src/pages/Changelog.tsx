@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Play } from "lucide-react";
+import { CalendarDays, Check, Pause, Play } from "lucide-react";
 
 export const changes = [
   {
@@ -58,9 +58,11 @@ export const changes = [
 
 interface ChangelogCardsProps {
   onSelectViceCity?: () => void;
+  viceMusicPlaying?: boolean;
+  onToggleViceMusic?: () => void;
 }
 
-export function ChangelogCards({ onSelectViceCity }: ChangelogCardsProps) {
+export function ChangelogCards({ onSelectViceCity, viceMusicPlaying = false, onToggleViceMusic }: ChangelogCardsProps) {
   return (
     <div className="changelog-list">
       {changes.map(change => (
@@ -92,6 +94,18 @@ export function ChangelogCards({ onSelectViceCity }: ChangelogCardsProps) {
             <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>
               <Play size={15} fill="currentColor" aria-hidden="true" />
               GTA 6 temasını seç
+            </button>
+          )}
+          {change.viceCity && onToggleViceMusic && (
+            <button
+              type="button"
+              className="changelog-vice-button changelog-music-button"
+              onClick={onToggleViceMusic}
+              aria-pressed={viceMusicPlaying}
+              aria-label={viceMusicPlaying ? "Tove Lo - Blood In Your Eyes müziğini durdur" : "Tove Lo - Blood In Your Eyes çal"}
+            >
+              {viceMusicPlaying ? <Pause size={15} aria-hidden="true" /> : <Play size={15} fill="currentColor" aria-hidden="true" />}
+              {viceMusicPlaying ? "Tove Lo - Blood In Your Eyes durdur" : "Tove Lo - Blood In Your Eyes çal"}
             </button>
           )}
         </article>

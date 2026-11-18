@@ -59,7 +59,7 @@ export default function Home() {
   const online = state?.counters.online ?? 0;
   const activeChats = state?.counters.activeChats ?? 0;
   const ownLeaveNotice = status === "idle" && notice === "Sohbeti bitirdin. Her şey silindi.";
-  const { setTheme, isCatMode, toggleCatMode } = useTheme();
+  const { setTheme, isCatMode, toggleCatMode, viceMusicPlaying, toggleViceMusic } = useTheme();
   const [changelogOpen, setChangelogOpen] = useState(false);
   const selectViceCity = () => {
     if (isCatMode) toggleCatMode();
@@ -164,7 +164,11 @@ export default function Home() {
             <DialogTitle>MUKALCHAT — CHANGELOG</DialogTitle>
           </DialogHeader>
           <div className="changelog-dialog-scroll">
-            <ChangelogCards onSelectViceCity={selectViceCity} />
+            <ChangelogCards
+              onSelectViceCity={selectViceCity}
+              viceMusicPlaying={viceMusicPlaying}
+              onToggleViceMusic={toggleViceMusic}
+            />
           </div>
         </DialogContent>
       </Dialog>
