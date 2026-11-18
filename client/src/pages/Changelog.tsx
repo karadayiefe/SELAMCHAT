@@ -1,30 +1,49 @@
-import { ArrowLeft, CalendarDays, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check } from "lucide-react";
 import { Link } from "wouter";
 
 const changes = [
   {
-    version: "V1.0 BETA",
-    date: "18 Kasım 2026",
-    title: "Kedi easter egg modu",
+    date: "16 Kasım 2026",
+    title: "HER ŞEYİN BAŞLANGICI",
     description:
-      "MUKALCHAT yazısına tıklayarak gizli kedi temasını açabilirsin. Seçtiğimiz kedi görseli artık hareketli karolarla arka planda akıyor.",
-    details: ["Kediler arka planda sürekli sola doğru hareket ediyor.", "Tema müziği loop olarak çalıyor.", "Ses, ayarların yanındaki ikonla açılıp kapatılabiliyor."],
+      "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
+    sectionLabel: "İlk gün:",
+    details: [
+      "Sitenin temel hâli oluşturuldu.",
+      "İlk eşleşmeler denendi.",
+      "Üst üste 3 hata aldık. Evet, daha ilk günden sıçtık.",
+    ],
   },
   {
-    version: "V1.0 BETA",
     date: "17 Kasım 2026",
-    title: "Daha güvenilir anonim sohbet",
+    title: "DAHA GÜVENİLİR ANONİM SOHBET",
     description:
-      "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme akışları daha güvenilir hale geldi.",
-    details: ["Anonim hayvan kimlikleri korunuyor.", "Sohbet bitince mesajlar temizleniyor.", "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor."],
+      "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
+    sectionLabel: "Bu gün gelenler:",
+    details: [
+      "56 farklı hayvan eklendi.",
+      "Sohbet bitince mesajlar temizleniyor.",
+      "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor.",
+    ],
   },
   {
-    version: "V1.0 BETA",
-    date: "İlk yayın",
-    title: "MUKALCHAT doğdu",
+    date: "18 Kasım 2026",
+    title: "VICE CITY'YE HOŞ GELDİNİZ",
     description:
-      "Okuldaki öğrencilerin üyelik veya profil oluşturmadan yeni biriyle canlı ve anonim şekilde konuşabilmesi için MUKALCHAT’i oluşturduk.",
-    details: ["Üyelik, e-posta ve profil zorunluluğu yok.", "Rastgele bire bir eşleşme.", "Açık, koyu ve GTA 6 · Vice City temaları."],
+      "~ VİCE CITY BABYYYY 🌴\n\nGTA 6 çıkışına özel tema sonunda MUKALCHAT'te!\n\nBu kez biraz farklı şeyler denedik:",
+    details: [
+      "🌴 GTA 6 özel teması eklendi.",
+      "🎵 GTA 6 temasına özel müzik eklendi.",
+      "🐈 Bir yerlere sakladığımız küçük bir kedi teması Easter egg'i var.",
+      "Kediyi kendiniz bulun. :) Bir yerlere tıklayın, etrafı keşfedin. Belki de gizli kediyi ilk siz bulursunuz.",
+    ],
+  },
+  {
+    date: "V1.0 BETA",
+    title: "VE BU GECE... 23:00...",
+    description: "MUKALCHAT V1.0 BETA",
+    details: ["16 Kasım'da bir fikir olarak başladı. Şimdi sizinle."],
+    finale: true,
   },
 ];
 
@@ -40,29 +59,19 @@ export default function Changelog() {
       </header>
 
       <main className="changelog-main">
-        <div className="changelog-hero">
-          <span className="changelog-icon" aria-hidden="true">
-            <Sparkles size={22} />
-          </span>
-          <p className="changelog-eyebrow">Neler değişti?</p>
-          <h1>Her gün biraz daha iyi.</h1>
-          <p>
-            MUKALCHAT’te yapılan önemli geliştirmeleri burada Türkçe ve kısa kısa paylaşıyoruz.
-          </p>
-        </div>
-
         <div className="changelog-list">
           {changes.map(change => (
-            <article className="changelog-entry" key={`${change.date}-${change.title}`}>
+            <article className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}`} key={`${change.date}-${change.title}`}>
               <div className="changelog-entry-meta">
-                <span className="changelog-version">{change.version}</span>
+                <span className="changelog-version">{change.finale ? "MUKALCHAT V1.0 BETA" : "CHANGELOG"}</span>
                 <span className="changelog-date">
                   <CalendarDays size={14} aria-hidden="true" />
                   {change.date}
                 </span>
               </div>
               <h2>{change.title}</h2>
-              <p>{change.description}</p>
+              <p className="changelog-entry-description">{change.description}</p>
+              {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
               <ul>
                 {change.details.map(detail => (
                   <li key={detail}>

@@ -145,7 +145,7 @@ export default function Home() {
           ·
         </span>
         <Link href="/changelog" className="beta-changelog-link">
-          V1.0 BETA
+          CHANGELOG'U GÖR <span aria-hidden="true">→</span>
         </Link>
       </footer>
     </div>

@@ -9,6 +9,8 @@ interface ThemeContextType {
   toggleCatMode: () => void;
   catSoundEnabled: boolean;
   toggleCatSound: () => void;
+  viceMusicPlaying: boolean;
+  toggleViceMusic: () => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
@@ -49,6 +51,8 @@ export function ThemeProvider({
     }
   });
   const catAudioRef = useRef<HTMLAudioElement | null>(null);
+  const viceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [viceMusicPlaying, setViceMusicPlaying] = useState(false);
 
   useEffect(() => {
     const audio = new Audio("/cat-theme.mp3");
@@ -60,6 +64,19 @@ export function ThemeProvider({
       audio.pause();
       audio.src = "";
       catAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = new Audio("/vice-city-theme.mp3");
+    audio.loop = true;
+    audio.volume = 0.32;
+    viceAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      viceAudioRef.current = null;
     };
   }, []);
 
@@ -76,6 +93,29 @@ export function ThemeProvider({
       audio.currentTime = 0;
     }
   }, [isCatMode, catSoundEnabled]);
+
+  useEffect(() => {
+    const audio = viceAudioRef.current;
+    const viceCityIsActive = theme === "vice-city" && !isCatMode;
+
+    if (!viceCityIsActive) {
+      setViceMusicPlaying(false);
+      audio?.pause();
+      if (audio) audio.currentTime = 0;
+    }
+  }, [theme, isCatMode]);
+
+  useEffect(() => {
+    const audio = viceAudioRef.current;
+    if (!audio) return;
+
+    if (viceMusicPlaying && theme === "vice-city" && !isCatMode) {
+      void audio.play().catch(() => setViceMusicPlaying(false));
+    } else {
+      audio.pause();
+      if (!viceMusicPlaying) audio.currentTime = 0;
+    }
+  }, [viceMusicPlaying, theme, isCatMode]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -109,6 +149,7 @@ export function ThemeProvider({
       return next;
     });
   };
+  const toggleViceMusic = () => setViceMusicPlaying(previous => !previous);
 
   return (
     <ThemeContext.Provider
@@ -119,6 +160,8 @@ export function ThemeProvider({
         toggleCatMode,
         catSoundEnabled,
         toggleCatSound,
+        viceMusicPlaying,
+        toggleViceMusic,
         toggleTheme,
         switchable,
       }}

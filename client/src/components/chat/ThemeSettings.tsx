@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Moon, Settings2, Sparkles, Sun, Volume2, VolumeX } from "lucide-react";
+import { Check, Moon, Pause, Play, Settings2, Sparkles, Sun, Volume2, VolumeX } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import {
   Dialog,
@@ -17,7 +17,15 @@ const options: { id: Theme; label: string; description: string; icon: typeof Moo
 
 export function ThemeSettings() {
   const [open, setOpen] = useState(false);
-  const { theme, setTheme, isCatMode, catSoundEnabled, toggleCatSound } = useTheme();
+  const {
+    theme,
+    setTheme,
+    isCatMode,
+    catSoundEnabled,
+    toggleCatSound,
+    viceMusicPlaying,
+    toggleViceMusic,
+  } = useTheme();
 
   return (
     <>
@@ -42,7 +50,18 @@ export function ThemeSettings() {
             title={catSoundEnabled ? "Kedi müziğini kapat" : "Kedi müziğini aç"}
           >
             {catSoundEnabled ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
-            <span>{catSoundEnabled ? "Ses açık" : "Ses kapalı"}</span>
+          </button>
+        )}
+        {theme === "vice-city" && !isCatMode && (
+          <button
+            type="button"
+            className="vice-music-toggle"
+            onClick={toggleViceMusic}
+            aria-pressed={viceMusicPlaying}
+            aria-label={viceMusicPlaying ? "Vice City müziğini durdur" : "Vice City müziğini oynat"}
+            title={viceMusicPlaying ? "Vice City müziğini durdur" : "Vice City müziğini oynat"}
+          >
+            {viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
           </button>
         )}
       </div>
