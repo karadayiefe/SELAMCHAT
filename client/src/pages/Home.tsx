@@ -7,7 +7,9 @@ import { ThemeSettings } from "@/components/chat/ThemeSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
-import { Link } from "wouter";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ChangelogCards } from "@/pages/Changelog";
+import { useState } from "react";
 
 function VicePalm({ side }: { side: "left" | "right" }) {
   return (
@@ -58,6 +60,7 @@ export default function Home() {
   const activeChats = state?.counters.activeChats ?? 0;
   const ownLeaveNotice = status === "idle" && notice === "Sohbeti bitirdin. Her şey silindi.";
   const { isCatMode, toggleCatMode } = useTheme();
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   return (
     <div className="page-shell">
@@ -145,10 +148,22 @@ export default function Home() {
           ·
         </span>
         <span className="beta-version-label">V1.0 BETA</span>
-        <Link href="/changelog" className="beta-changelog-link">
+        <button type="button" className="beta-changelog-link" onClick={() => setChangelogOpen(true)}>
           CHANGELOG'U GÖR <span aria-hidden="true">→</span>
-        </Link>
+        </button>
       </footer>
+
+      <Dialog open={changelogOpen} onOpenChange={setChangelogOpen}>
+        <DialogContent className="changelog-dialog">
+          <DialogHeader>
+            <DialogTitle>MUKALCHAT — CHANGELOG</DialogTitle>
+            <DialogDescription>16 Kasım'dan bugüne MUKALCHAT'te neler oldu?</DialogDescription>
+          </DialogHeader>
+          <div className="changelog-dialog-scroll">
+            <ChangelogCards />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

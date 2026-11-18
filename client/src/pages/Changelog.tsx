@@ -1,7 +1,6 @@
-import { ArrowLeft, CalendarDays, Check } from "lucide-react";
-import { Link } from "wouter";
+import { CalendarDays, Check } from "lucide-react";
 
-const changes = [
+export const changes = [
   {
     date: "16 Kasım 2026",
     title: "HER ŞEYİN BAŞLANGICI",
@@ -47,49 +46,31 @@ const changes = [
   },
 ];
 
-export default function Changelog() {
+export function ChangelogCards() {
   return (
-    <div className="changelog-shell">
-      <header className="changelog-header">
-        <Link href="/" className="changelog-back-link">
-          <ArrowLeft size={16} aria-hidden="true" />
-          Sohbete dön
-        </Link>
-        <span className="changelog-kicker">MUKALCHAT / CHANGELOG</span>
-      </header>
-
-      <main className="changelog-main">
-        <div className="changelog-list">
-          {changes.map(change => (
-            <article className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}`} key={`${change.date}-${change.title}`}>
-              <div className="changelog-entry-meta">
-                <span className="changelog-version">{change.finale ? "MUKALCHAT V1.0 BETA" : "CHANGELOG"}</span>
-                <span className="changelog-date">
-                  <CalendarDays size={14} aria-hidden="true" />
-                  {change.date}
-                </span>
-              </div>
-              <h2>{change.title}</h2>
-              <p className="changelog-entry-description">{change.description}</p>
-              {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
-              <ul>
-                {change.details.map(detail => (
-                  <li key={detail}>
-                    <Check size={15} aria-hidden="true" />
-                    <span>{detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </main>
-
-      <footer className="changelog-footer">
-        <Link href="/">MUKALCHAT</Link>
-        <span aria-hidden="true">·</span>
-        <span>Mesajlar saklanmaz, sohbet bitince silinir</span>
-      </footer>
+    <div className="changelog-list">
+      {changes.map(change => (
+        <article className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}`} key={`${change.date}-${change.title}`}>
+          <div className="changelog-entry-meta">
+            <span className="changelog-version">{change.finale ? "MUKALCHAT V1.0 BETA" : "CHANGELOG"}</span>
+            <span className="changelog-date">
+              <CalendarDays size={14} aria-hidden="true" />
+              {change.date}
+            </span>
+          </div>
+          <h2>{change.title}</h2>
+          <p className="changelog-entry-description">{change.description}</p>
+          {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
+          <ul>
+            {change.details.map(detail => (
+              <li key={detail}>
+                <Check size={15} aria-hidden="true" />
+                <span>{detail}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))}
     </div>
   );
 }
