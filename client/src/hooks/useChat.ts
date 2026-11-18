@@ -63,7 +63,7 @@ export function useChat() {
     const safeState =
       next.status === "chatting"
         ? next
-        : { ...next, roomId: null, partner: null, partnerTyping: false, messages: [] };
+        : { ...next, roomId: null, roomCode: null, partner: null, partnerTyping: false, messages: [] };
     stateRef.current = safeState;
     tokenRef.current = safeState.token;
     statusRef.current = safeState.status;
@@ -224,10 +224,10 @@ export function useChat() {
 
   // Tell the server when the tab is closed so the partner is released at once.
   useEffect(() => {
-    const bye = () => {
+    const bye = (event: PageTransitionEvent) => {
+      if (event.persisted) return;
       const token = tokenRef.current;
       if (!token) return;
-      if (statusRef.current !== "chatting" && statusRef.current !== "waiting") return;
       try {
         const payload = new Blob([JSON.stringify({ token })], { type: "application/json" });
         navigator.sendBeacon("/api/chat/bye", payload);
@@ -261,6 +261,9 @@ export function useChat() {
     if (!token) return;
     const lifecycle = ++lifecycleRef.current;
     const previous = stateRef.current;
+    if (previous?.status === "chatting") {
+      setNotice("Sohbeti bitirdin, sohbet temizlendi.");
+    }
     if (previous?.roomId !== null && previous?.roomId !== undefined) {
       endedRoomIdsRef.current.add(previous.roomId);
     }
@@ -270,6 +273,7 @@ export function useChat() {
         ...previous,
         status: "idle",
         roomId: null,
+        roomCode: null,
         partner: null,
         partnerTyping: false,
         messages: [],
@@ -305,6 +309,8 @@ export function useChat() {
           senderEmoji: me.emoji,
           senderColor: me.color,
           createdAt: new Date().toISOString(),
+          deliveredAt: null,
+          readAt: null,
         };
         const optimisticState = { ...stateRef.current, messages: [...stateRef.current.messages, optimistic] };
         stateRef.current = optimisticState;

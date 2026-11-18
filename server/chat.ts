@@ -26,6 +26,10 @@ export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
 }
 
+export function createRoomCode() {
+  return nanoid(10).toUpperCase();
+}
+
 /** Safety net: messages of a closed room are always wiped. */
 const MAX_MESSAGES_PER_ROOM = 300;
 export const MAX_MESSAGE_LENGTH = 500;
@@ -114,12 +118,15 @@ export type ChatMessage = {
   senderEmoji: string;
   senderColor: string;
   createdAt: string;
+  deliveredAt: string | null;
+  readAt: string | null;
 };
 
 export type ChatState = {
   token: string;
   status: ChatStatus;
   roomId: number | null;
+  roomCode: string | null;
   me: Identity;
   partner: Identity | null;
   partnerTyping: boolean;
@@ -238,13 +245,14 @@ async function closeRoom(tx: Tx, roomId: number, leavingId: number): Promise<voi
 
   // Idempotent: a concurrent leave/timeout may already have closed this room.
   if (!room || room.status !== "active") {
+    await tx.update(rooms).set({ publicCode: null }).where(eq(rooms.id, roomId));
     await tx.delete(messages).where(eq(messages.roomId, roomId));
     return;
   }
 
   await tx
     .update(rooms)
-    .set({ status: "closed", lastActivity: sql`NOW()` })
+    .set({ status: "closed", publicCode: null, lastActivity: sql`NOW()` })
     .where(and(eq(rooms.id, roomId), eq(rooms.status, "active")));
   await tx.delete(messages).where(eq(messages.roomId, roomId));
 
@@ -299,7 +307,7 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
 
       if (locked.length !== 2) return null;
 
-      const inserted = await tx.insert(rooms).values({ status: "active" });
+      const inserted = await tx.insert(rooms).values({ status: "active", publicCode: createRoomCode() });
       const createdRoomId = Number(inserted[0].insertId);
       const claimed = await tx
         .update(participants)
@@ -394,6 +402,40 @@ export async function leaveChat(token: string): Promise<void> {
         .update(participants)
         .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
         .where(eq(participants.id, current.id));
+      return false;
+    });
+
+    if (!retry) return;
+  }
+}
+
+/** Page exit is different from leaving a conversation: remove tab presence at once. */
+export async function endSession(token: string): Promise<void> {
+  const d = await db();
+  for (;;) {
+    const snapshot = await findByToken(d, token);
+    if (!snapshot) return;
+
+    const retry = await d.transaction(async tx => {
+      const locked = snapshot.roomId
+        ? await tx
+            .select()
+            .from(participants)
+            .where(or(eq(participants.roomId, snapshot.roomId), eq(participants.id, snapshot.id)))
+            .orderBy(asc(participants.id))
+            .for("update")
+        : await tx
+            .select()
+            .from(participants)
+            .where(eq(participants.id, snapshot.id))
+            .for("update")
+            .limit(1);
+      const current = locked.find(row => row.id === snapshot.id);
+      if (!current) return false;
+      if (current.roomId && current.roomId !== snapshot.roomId) return true;
+
+      if (current.roomId) await closeRoom(tx, current.roomId, current.id);
+      await tx.delete(participants).where(eq(participants.id, current.id));
       return false;
     });
 
@@ -615,6 +657,7 @@ export async function getState(token: string): Promise<ChatState | null> {
   let status: ChatStatus = me.status;
   let partner: (Identity & { typing: boolean }) | null = null;
   let rows: ChatMessage[] = [];
+  let roomCode: string | null = null;
 
   if (me.roomId) {
     const roomId = me.roomId;
@@ -626,6 +669,7 @@ export async function getState(token: string): Promise<ChatState | null> {
           return {
             status: "chatting" as const,
             partner: null,
+            roomCode: null,
             messages: [] as ChatMessage[],
             retry: true,
           };
@@ -633,6 +677,7 @@ export async function getState(token: string): Promise<ChatState | null> {
         return {
           status: current?.status === "partner_left" ? ("partner_left" as const) : ("idle" as const),
           partner: null,
+          roomCode: null,
           messages: [] as ChatMessage[],
           retry: false,
         };
@@ -646,12 +691,13 @@ export async function getState(token: string): Promise<ChatState | null> {
         .limit(1);
 
       if (!room || room.status !== "active") {
+        await tx.update(rooms).set({ publicCode: null }).where(eq(rooms.id, roomId));
         await tx.delete(messages).where(eq(messages.roomId, roomId));
         await tx
           .update(participants)
           .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
           .where(eq(participants.roomId, roomId));
-        return { status: "partner_left" as const, partner: null, messages: [] as ChatMessage[], retry: false };
+        return { status: "partner_left" as const, partner: null, roomCode: null, messages: [] as ChatMessage[], retry: false };
       }
 
       const partnerRows = await tx
@@ -677,7 +723,23 @@ export async function getState(token: string): Promise<ChatState | null> {
       if (!partnerRow || !partnerFresh) {
         // Heartbeat timeout is treated exactly like a deliberate leave.
         await closeRoom(tx, roomId, partnerRow?.id ?? -1);
-        return { status: "partner_left" as const, partner: null, messages: [] as ChatMessage[], retry: false };
+        return { status: "partner_left" as const, partner: null, roomCode: null, messages: [] as ChatMessage[], retry: false };
+      }
+
+      const peerMessages = and(eq(messages.roomId, roomId), ne(messages.senderId, current.id));
+      if (!current.isHidden) {
+        await tx
+          .update(messages)
+          .set({
+            deliveredAt: sql`COALESCE(${messages.deliveredAt}, NOW())`,
+            readAt: sql`COALESCE(${messages.readAt}, NOW())`,
+          })
+          .where(and(peerMessages, or(isNull(messages.deliveredAt), isNull(messages.readAt))));
+      } else {
+        await tx
+          .update(messages)
+          .set({ deliveredAt: sql`COALESCE(${messages.deliveredAt}, NOW())` })
+          .where(and(peerMessages, isNull(messages.deliveredAt)));
       }
 
       const messageRows = await tx
@@ -689,6 +751,8 @@ export async function getState(token: string): Promise<ChatState | null> {
           senderName: participants.displayName,
           senderEmoji: participants.emoji,
           senderColor: participants.color,
+          deliveredAt: messages.deliveredAt,
+          readAt: messages.readAt,
         })
         .from(messages)
         .innerJoin(participants, eq(participants.id, messages.senderId))
@@ -699,6 +763,7 @@ export async function getState(token: string): Promise<ChatState | null> {
       return {
         status: "chatting" as const,
         partner: { ...identityOf(partnerRow), typing: Boolean(Number(partnerRow.typing)) },
+        roomCode: room.publicCode,
         retry: false,
         messages: messageRows.map(row => ({
           id: row.id,
@@ -708,12 +773,15 @@ export async function getState(token: string): Promise<ChatState | null> {
           senderEmoji: row.senderEmoji,
           senderColor: row.senderColor,
           createdAt: row.createdAt.toISOString(),
+          deliveredAt: row.deliveredAt?.toISOString() ?? null,
+          readAt: row.readAt?.toISOString() ?? null,
         })),
       };
     });
 
     status = snapshot.status;
     partner = snapshot.partner;
+    roomCode = snapshot.roomCode;
     rows = snapshot.messages;
     me = (await findByToken(d, token)) ?? me;
     if (snapshot.retry) return getState(token);
@@ -746,6 +814,7 @@ export async function getState(token: string): Promise<ChatState | null> {
     token: me.token,
     status,
     roomId: status === "chatting" ? me.roomId : null,
+    roomCode: status === "chatting" ? roomCode : null,
     me: identityOf(me),
     partner: partner ? { animalKey: partner.animalKey, name: partner.name, emoji: partner.emoji, color: partner.color } : null,
     partnerTyping: partner?.typing ?? false,

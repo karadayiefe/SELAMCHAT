@@ -15,12 +15,15 @@ export type ChatMessage = {
   senderEmoji: string;
   senderColor: string;
   createdAt: string;
+  deliveredAt: string | null;
+  readAt: string | null;
 };
 
 export type ChatState = {
   token: string;
   status: ChatStatus;
   roomId: number | null;
+  roomCode: string | null;
   me: Identity;
   partner: Identity | null;
   partnerTyping: boolean;

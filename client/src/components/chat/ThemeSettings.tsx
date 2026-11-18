@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dialog";
 
 const options: { id: Theme; label: string; description: string; icon: typeof Moon }[] = [
-  { id: "dark", label: "Koyu", description: "MUKALCHAT klasik koyu tema", icon: Moon },
-  { id: "light", label: "Açık", description: "Aydınlık ve sade görünüm", icon: Sun },
-  { id: "vice-city", label: "GTA 6 · Vice City", description: "Neon pembe, mor ve gün batımı renkleri", icon: Sparkles },
+  { id: "dark", label: "Koyu", description: "", icon: Moon },
+  { id: "light", label: "Açık", description: "", icon: Sun },
+  { id: "vice-city", label: "GTA 6 · Vice City", description: "Özel tema", icon: Sparkles },
 ];
 
 export function ThemeSettings() {
@@ -35,7 +35,7 @@ export function ThemeSettings() {
         <DialogContent className="settings-dialog">
           <DialogHeader>
             <DialogTitle>Ayarlar</DialogTitle>
-            <DialogDescription>Görünüm temasını seç. Tercihin bu tarayıcıda saklanır.</DialogDescription>
+            <DialogDescription>Görünüm temasını seç.</DialogDescription>
           </DialogHeader>
           <div className="theme-options" role="group" aria-label="Tema seçimi">
             {options.map(({ id, label, description, icon: Icon }) => (
@@ -51,7 +51,7 @@ export function ThemeSettings() {
                 </span>
                 <span className="theme-option-copy">
                   <span className="theme-option-title">{label}</span>
-                  <span className="theme-option-description">{description}</span>
+                  {description && <span className="theme-option-description">{description}</span>}
                 </span>
                 {theme === id && <Check className="theme-option-check" size={18} aria-label="Seçili" />}
               </button>

@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   getState,
   joinQueue,
+  endSession,
   leaveChat,
   sendMessage,
   setTyping,
@@ -132,7 +133,7 @@ export function registerChatRoutes(app: Express) {
     respond(req, res, async () => {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
-      await leaveChat(token);
+      await endSession(token);
       return { ok: true };
     })
   );

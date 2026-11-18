@@ -1,4 +1,4 @@
-import { bigint, boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { bigint, boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -26,10 +26,11 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const rooms = mysqlTable("rooms", {
   id: int("id").autoincrement().primaryKey(),
+  publicCode: varchar("publicCode", { length: 12 }),
   status: mysqlEnum("status", ["active", "closed"]).default("active").notNull(),
   lastActivity: timestamp("lastActivity").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, table => [uniqueIndex("rooms_public_code_unique").on(table.publicCode)]);
 
 /**
  * Anonymous visitor. `token` is the random per-tab secret the browser keeps.
@@ -75,6 +76,8 @@ export const messages = mysqlTable(
     senderId: int("senderId").notNull(),
     body: varchar("body", { length: 600 }).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
+    deliveredAt: timestamp("deliveredAt"),
+    readAt: timestamp("readAt"),
   },
   table => [index("idx_messages_room").on(table.roomId, table.id)]
 );

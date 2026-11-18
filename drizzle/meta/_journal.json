@@ -29,6 +29,13 @@
       "when": 1794951167641,
       "tag": "0003_visibility_version_ordering",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1795007603553,
+      "tag": "0004_temporary_room_codes_and_message_receipts",
+      "breakpoints": true
     }
   ]
 }

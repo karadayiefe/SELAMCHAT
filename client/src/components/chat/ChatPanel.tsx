@@ -1,10 +1,22 @@
 import { IdentityTile } from "@/components/chat/Brand";
 import type { ChatMessage, Identity } from "@/lib/chatApi";
-import { ArrowUp, LogOut } from "lucide-react";
+import { ArrowUp, Check, CheckCheck, Clock3, Copy, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 function Bubble({ message }: { message: ChatMessage }) {
   const color = message.senderColor;
+  const sentAt = new Date(message.createdAt);
+  const timeLabel = Number.isNaN(sentAt.getTime())
+    ? ""
+    : new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(sentAt);
+  const receipt = message.id < 0
+    ? { label: "Gönderiliyor", className: "receipt--sending", icon: Clock3 }
+    : message.readAt
+      ? { label: "Okundu", className: "receipt--read", icon: CheckCheck }
+      : message.deliveredAt
+        ? { label: "İletildi", className: "receipt--delivered", icon: CheckCheck }
+        : { label: "Gönderildi", className: "receipt--sent", icon: Check };
+  const ReceiptIcon = receipt.icon;
 
   return (
     <div className={`bubble-row ${message.mine ? "bubble-row--mine" : "bubble-row--theirs"}`}>
@@ -25,6 +37,15 @@ function Bubble({ message }: { message: ChatMessage }) {
       >
         {message.body}
       </div>
+      <div className={`bubble-time${message.mine ? " bubble-time--mine" : ""}`}>
+        <time dateTime={message.createdAt}>{timeLabel}</time>
+        {message.mine && (
+          <span className={`message-receipt ${receipt.className}`} aria-label={receipt.label} title={receipt.label}>
+            <ReceiptIcon size={14} strokeWidth={2.1} aria-hidden="true" />
+            <span>{receipt.label}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -32,6 +53,7 @@ function Bubble({ message }: { message: ChatMessage }) {
 export function ChatPanel({
   me,
   partner,
+  roomCode,
   messages,
   partnerTyping,
   busy,
@@ -41,6 +63,7 @@ export function ChatPanel({
 }: {
   me: Identity;
   partner: Identity;
+  roomCode: string | null;
   messages: ChatMessage[];
   partnerTyping: boolean;
   busy: boolean;
@@ -49,6 +72,7 @@ export function ChatPanel({
   onTyping: () => void;
 }) {
   const [text, setText] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +94,18 @@ export function ChatPanel({
     setText("");
     await onSend(value);
     inputRef.current?.focus();
+  };
+
+  const copyRoomCode = async () => {
+    if (!roomCode) return;
+    const shareText = `${me.emoji} ${me.name} × ${partner.emoji} ${partner.name} · ${roomCode}`;
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopiedCode(true);
+      window.setTimeout(() => setCopiedCode(false), 1500);
+    } catch {
+      setCopiedCode(false);
+    }
   };
 
   return (
@@ -104,6 +140,19 @@ export function ChatPanel({
           Sohbetten Ayrıl
         </button>
       </header>
+
+      {roomCode && (
+        <div className="room-code-strip">
+          <span className="room-code-animals" aria-label={`${me.name} ile ${partner.name}`}>
+            {me.emoji} {me.name} <span aria-hidden="true">×</span> {partner.emoji} {partner.name}
+          </span>
+          <button type="button" className="room-code-copy" onClick={() => void copyRoomCode()} aria-label="Sohbet kodunu kopyala" title="Sohbet kodunu kopyala">
+            <span className="room-code-label">{copiedCode ? "Kopyalandı" : "Kod"}</span>
+            <code>{roomCode}</code>
+            <Copy size={13} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 && (

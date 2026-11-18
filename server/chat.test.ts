@@ -4,6 +4,7 @@ import {
   CHAT_BACKGROUND_TIMEOUT_SECONDS,
   CHAT_DISCONNECT_TIMEOUT_SECONDS,
   QUEUE_WINDOW_SECONDS,
+  createRoomCode,
   getPartnerTimeoutSeconds,
 } from "./chat.js";
 
@@ -30,5 +31,11 @@ describe("anonymous chat configuration", () => {
       expect(animal.emoji.length).toBeLessThanOrEqual(16);
       expect(animal.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
     }
+  });
+
+  it("generates unique ten-character temporary room codes", () => {
+    const codes = Array.from({ length: 100 }, createRoomCode);
+    expect(codes.every(code => /^[A-Z0-9_-]{10}$/.test(code))).toBe(true);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 });
