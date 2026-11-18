@@ -7,6 +7,7 @@ import { ThemeSettings } from "@/components/chat/ThemeSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
+import { Link } from "wouter";
 
 function VicePalm({ side }: { side: "left" | "right" }) {
   return (
@@ -129,21 +130,23 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        <span className="font-semibold tracking-wide text-[color:var(--text)]">MUKALCHAT</span>
+        <button
+          type="button"
+          className="brand-easter-egg font-semibold tracking-wide"
+          onClick={toggleCatMode}
+          aria-pressed={isCatMode}
+          title={isCatMode ? "Kedi modunu kapat" : "Gizli kedi modunu aç"}
+        >
+          MUKALCHAT
+        </button>
         <span aria-hidden="true">·</span>
         <span>Mesajlar saklanmaz, sohbet bitince silinir</span>
         <span className="hidden sm:inline" aria-hidden="true">
           ·
         </span>
-        <button
-          type="button"
-          className="beta-easter-egg"
-          onClick={toggleCatMode}
-          aria-pressed={isCatMode}
-          title={isCatMode ? "Kedi modunu kapat" : "Gizli kedi modunu aç"}
-        >
+        <Link href="/changelog" className="beta-changelog-link">
           V1.0 BETA
-        </button>
+        </Link>
       </footer>
     </div>
   );

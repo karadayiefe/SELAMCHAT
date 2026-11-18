@@ -375,9 +375,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.34rem;
+    width: 2rem;
     min-height: 2rem;
-    padding: 0.35rem 0.58rem;
+    padding: 0;
     border: 1px solid rgba(200, 59, 36, 0.34);
     border-radius: 999px;
     color: var(--text-dim);
@@ -948,7 +948,8 @@
     text-align: center;
   }
 
-  .beta-easter-egg {
+  .brand-easter-egg,
+  .beta-changelog-link {
     border: 0;
     padding: 0;
     color: inherit;
@@ -958,17 +959,161 @@
     transition: color 180ms ease, transform 180ms ease;
   }
 
-  .beta-easter-egg:hover,
-  .beta-easter-egg[aria-pressed="true"] {
+  .brand-easter-egg:hover,
+  .brand-easter-egg[aria-pressed="true"],
+  .beta-changelog-link:hover {
     color: var(--lime);
     transform: translateY(-1px);
   }
 
-  .beta-easter-egg:focus-visible {
+  .brand-easter-egg:focus-visible,
+  .beta-changelog-link:focus-visible {
     border-radius: 0.25rem;
     outline: 2px solid var(--lime);
     outline-offset: 3px;
   }
+
+  .changelog-shell {
+    width: min(100%, 48rem);
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: 1.1rem 1rem 2rem;
+  }
+
+  .changelog-header,
+  .changelog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+  }
+
+  .changelog-back-link,
+  .changelog-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text);
+    font-weight: 650;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  .changelog-back-link:hover,
+  .changelog-footer a:hover { color: var(--lime); transform: translateY(-1px); }
+
+  .changelog-kicker,
+  .changelog-eyebrow {
+    color: var(--lime);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .changelog-main { padding: 5.5rem 0 2.5rem; }
+
+  .changelog-hero {
+    max-width: 38rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .changelog-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 1rem;
+    color: var(--lime);
+    background: var(--soft-surface);
+    box-shadow: 0 12px 30px -18px var(--accent-shadow);
+  }
+
+  .changelog-hero h1 {
+    margin: 0.45rem 0 0.8rem;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 7vw, 4.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+  }
+
+  .changelog-hero > p:last-child {
+    max-width: 31rem;
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .changelog-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .changelog-entry {
+    padding: 1.2rem 1.25rem 1.35rem;
+    border: 1px solid var(--line);
+    border-radius: 1.1rem;
+    background: color-mix(in srgb, var(--surface) 76%, transparent);
+    box-shadow: 0 18px 44px -32px var(--accent-shadow);
+    backdrop-filter: blur(14px);
+  }
+
+  .changelog-entry-meta,
+  .changelog-date {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .changelog-entry-meta {
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+  }
+
+  .changelog-version {
+    color: var(--lime);
+    font-weight: 750;
+    letter-spacing: 0.08em;
+  }
+
+  .changelog-entry h2 {
+    margin: 0 0 0.45rem;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+  }
+
+  .changelog-entry > p {
+    margin: 0;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .changelog-entry ul {
+    display: grid;
+    gap: 0.45rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    color: var(--text);
+    list-style: none;
+    font-size: 0.84rem;
+  }
+
+  .changelog-entry li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .changelog-entry li svg { flex: none; margin-top: 0.12rem; color: var(--lime); }
+  .changelog-footer { justify-content: center; flex-wrap: wrap; }
 
   :root[data-theme="vice-city"] body {
     background-image:
@@ -1156,7 +1301,7 @@
 
   :root[data-theme="cat"] .composer-input { background: rgba(255, 253, 249, 0.8); }
 
-  :root[data-theme="cat"] :is(.btn, .settings-trigger, .theme-option, .beta-easter-egg):focus-visible {
+  :root[data-theme="cat"] :is(.btn, .settings-trigger, .theme-option, .brand-easter-egg, .beta-changelog-link):focus-visible {
     outline-color: #c83b24;
   }
 
