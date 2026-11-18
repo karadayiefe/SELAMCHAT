@@ -4,17 +4,26 @@ import {
   CHAT_BACKGROUND_TIMEOUT_SECONDS,
   CHAT_DISCONNECT_TIMEOUT_SECONDS,
   QUEUE_WINDOW_SECONDS,
+  chooseAnimal,
   createRoomCode,
   getPartnerTimeoutSeconds,
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("keeps the 30-second search window separate from tolerant visible and background chat leases", () => {
+  it("keeps the 30-second search window separate from one-minute chat leases", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
-    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(30);
-    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30 * 60);
-    expect(getPartnerTimeoutSeconds(false)).toBe(30);
-    expect(getPartnerTimeoutSeconds(true)).toBe(30 * 60);
+    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(60);
+    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(60);
+    expect(getPartnerTimeoutSeconds(false)).toBe(60);
+    expect(getPartnerTimeoutSeconds(true)).toBe(60);
+  });
+
+  it("assigns a different animal when the previous identity is excluded", () => {
+    for (const previous of ANIMALS) {
+      const next = chooseAnimal(previous.key);
+      expect(next.key).not.toBe(previous.key);
+      expect(ANIMALS).toContainEqual(next);
+    }
   });
 
   it("assigns unique, schema-safe animal identities", () => {

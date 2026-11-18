@@ -11,17 +11,16 @@ import { getDb } from "./db.js";
  * - No accounts, no profiles. A visitor is a row with a random animal identity
  *   and a secret token kept in the browser.
  * - Presence is a visibility-aware lease (`lastSeen`). Hidden tabs receive a
- *   long mobile-suspension grace before being considered disconnected.
+ *   60-second grace; hidden polls do not extend that away timer.
  * - Messages live only while a room is active. Button/pagehide exits close and
  *   delete immediately; a lost connection is cleaned after its lease expires.
  */
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** A missed foreground heartbeat is tolerated; only a sustained outage ends the room. */
-export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 30;
-/** Mobile tabs may be frozen for a long time while the phone is locked or another app is open. */
-export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30 * 60;
+/** A participant who is away or stops heartbeating is removed after one minute. */
+export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 60;
+export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 60;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
@@ -107,7 +106,14 @@ export const ANIMALS: AnimalDefinition[] = [
   { key: "karga", name: "Karga", emoji: "🐦‍⬛", color: "#9FA8B6" },
 ];
 
-export type ChatStatus = "idle" | "waiting" | "chatting" | "partner_left";
+export function chooseAnimal(excludeAnimalKey?: unknown): AnimalDefinition {
+  const excluded = typeof excludeAnimalKey === "string" ? excludeAnimalKey : null;
+  const available = excluded ? ANIMALS.filter(animal => animal.key !== excluded) : ANIMALS;
+  const choices = available.length > 0 ? available : ANIMALS;
+  return choices[randomInt(0, choices.length)];
+}
+
+export type ChatStatus = "idle" | "waiting" | "chatting" | "partner_left" | "connection_lost";
 
 export type Identity = {
   animalKey: string;
@@ -180,7 +186,7 @@ function cleanBody(raw: unknown): string {
 /* Session                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export async function startSession(rawToken: unknown): Promise<ParticipantRow> {
+export async function startSession(rawToken: unknown, rawAvoidAnimalKey?: unknown): Promise<ParticipantRow> {
   const d = await db();
   const token =
     typeof rawToken === "string" && rawToken.length >= 16 && rawToken.length <= 64 ? rawToken : null;
@@ -196,7 +202,7 @@ export async function startSession(rawToken: unknown): Promise<ParticipantRow> {
     }
   }
 
-  const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+  const animal = chooseAnimal(rawAvoidAnimalKey);
   const newToken = token ?? nanoid(24);
 
   await d.insert(participants).values({
@@ -244,9 +250,15 @@ async function lockRoomParticipants(tx: Tx, roomId: number, includeParticipantId
  * Must be called inside a transaction. The room row is the serialization point
  * shared with sendMessage, so a concurrent send either commits before closure
  * (and is then deleted) or sees the closed room and is rejected.
- * `leavingId` is -1 for a timeout where the vanished participant row is missing.
+ * A connection timeout marks both participants as connection-lost; deliberate
+ * leaves still reset the leaver and notify only the other participant.
  */
-async function closeRoom(tx: Tx, roomId: number, leavingId: number): Promise<void> {
+async function closeRoom(
+  tx: Tx,
+  roomId: number,
+  leavingId: number,
+  connectionLost = false
+): Promise<void> {
   // Keep a single lock order across all close/send/state paths.
   await lockRoomParticipants(tx, roomId);
   const [room] = await tx.select().from(rooms).where(eq(rooms.id, roomId)).for("update").limit(1);
@@ -264,6 +276,15 @@ async function closeRoom(tx: Tx, roomId: number, leavingId: number): Promise<voi
     .where(and(eq(rooms.id, roomId), eq(rooms.status, "active")));
   await tx.delete(messages).where(eq(messages.roomId, roomId));
 
+  if (connectionLost) {
+    // Keep isHidden as a short-lived marker so later state reads distinguish a timeout from a deliberate leave.
+    await tx
+      .update(participants)
+      .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
+      .where(eq(participants.roomId, roomId));
+    return;
+  }
+
   const otherSide = [eq(participants.roomId, roomId)];
   if (leavingId > 0) {
     await tx
@@ -276,7 +297,7 @@ async function closeRoom(tx: Tx, roomId: number, leavingId: number): Promise<voi
   // Every still-present peer sees the exit notice; no second exit is required.
   await tx
     .update(participants)
-    .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
+    .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
     .where(and(...otherSide));
 }
 
@@ -342,7 +363,7 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
 /* Actions                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export async function joinQueue(token: string): Promise<void> {
+export async function joinQueue(token: string, rotateAnimal = false): Promise<void> {
   const d = await db();
   const me = await findByToken(d, token);
   if (!me) return;
@@ -358,9 +379,20 @@ export async function joinQueue(token: string): Promise<void> {
       .limit(1);
     if (!current || (current.status === "chatting" && current.roomId)) return false;
 
+    const nextAnimal = rotateAnimal && current.status !== "waiting"
+      ? chooseAnimal(current.animalKey)
+      : null;
     await tx
       .update(participants)
       .set({
+        ...(nextAnimal
+          ? {
+              animalKey: nextAnimal.key,
+              displayName: nextAnimal.name,
+              emoji: nextAnimal.emoji,
+              color: nextAnimal.color,
+            }
+          : {}),
         status: "waiting",
         queuedAt: sql`NOW()`,
         roomId: null,
@@ -548,20 +580,22 @@ export async function setTyping(token: string): Promise<void> {
     .where(eq(participants.id, me.id));
 }
 
-/** Visibility is a separate hint, not a leave signal; hidden clients still keep their chat. */
+/** Visibility is a separate hint; hidden clients get one minute before their room is closed. */
 export async function setVisibility(
   token: string,
   isHidden: boolean,
   version: number
 ): Promise<void> {
   const d = await db();
+  // Do not clear the timeout marker before the returning client reads its reason.
   await d
     .update(participants)
     .set({ isHidden, visibilityVersion: version, lastSeen: sql`NOW()` })
     .where(
       and(
         eq(participants.token, token),
-        sql`${participants.visibilityVersion} < ${version}`
+        sql`${participants.visibilityVersion} < ${version}`,
+        ne(participants.status, "partner_left")
       )
     );
 }
@@ -589,7 +623,7 @@ async function closeRoomIfStale(tx: Tx, roomId: number): Promise<void> {
     )
     .limit(1);
   if (freshParticipants.length > 0) return;
-  await closeRoom(tx, roomId, -1);
+  await closeRoom(tx, roomId, -1, true);
 }
 
 /** Removes abandoned rooms, their messages, and long-gone visitors. */
@@ -601,7 +635,7 @@ export async function sweep(force = false): Promise<void> {
   const d = await db();
 
   // A fully timed-out room is closed and both returning participants receive
-  // the leave notice; quiet-but-connected chats are never touched.
+  // the connection-lost notice; quiet-but-connected chats are never touched.
   const [staleRows] = await d.execute(
     sql`SELECT r.id AS id FROM rooms r
         WHERE r.status = 'active'
@@ -674,10 +708,15 @@ export async function getState(token: string): Promise<ChatState | null> {
   await d
     .update(participants)
     .set({ lastSeen: sql`NOW()` })
-    .where(eq(participants.id, me.id));
+    .where(
+      and(
+        eq(participants.id, me.id),
+        or(eq(participants.isHidden, false), ne(participants.status, "chatting"))
+      )
+    );
   me = (await findByToken(d, token)) ?? me;
 
-  let status: ChatStatus = me.status;
+  let status: ChatStatus = me.status === "partner_left" && me.isHidden ? "connection_lost" : me.status;
   let partner: (Identity & { typing: boolean }) | null = null;
   let rows: ChatMessage[] = [];
   let roomCode: string | null = null;
@@ -700,7 +739,9 @@ export async function getState(token: string): Promise<ChatState | null> {
           };
         }
         return {
-          status: current?.status === "partner_left" ? ("partner_left" as const) : ("idle" as const),
+          status: current?.status === "partner_left"
+            ? (current.isHidden ? ("connection_lost" as const) : ("partner_left" as const))
+            : ("idle" as const),
           partner: null,
           roomCode: null,
           roomCard: null,
@@ -721,9 +762,9 @@ export async function getState(token: string): Promise<ChatState | null> {
         await tx.delete(messages).where(eq(messages.roomId, roomId));
         await tx
           .update(participants)
-          .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
+          .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
           .where(eq(participants.roomId, roomId));
-        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
 
       let sharedCode = room.publicCode;
@@ -736,8 +777,8 @@ export async function getState(token: string): Promise<ChatState | null> {
         .sort((a, b) => a.id - b.id)
         .map(identityOf);
       if (sharedAnimals.length !== 2) {
-        await closeRoom(tx, roomId, current.id);
-        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        await closeRoom(tx, roomId, current.id, true);
+        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
 
       const partnerRows = await tx
@@ -761,9 +802,9 @@ export async function getState(token: string): Promise<ChatState | null> {
         : 0;
 
       if (!partnerRow || !partnerFresh) {
-        // Heartbeat timeout is treated exactly like a deliberate leave.
-        await closeRoom(tx, roomId, partnerRow?.id ?? -1);
-        return { status: "partner_left" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        // A timeout is reported separately from a deliberate leave on both sides.
+        await closeRoom(tx, roomId, partnerRow?.id ?? -1, true);
+        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
 
       const peerMessages = and(eq(messages.roomId, roomId), ne(messages.senderId, current.id));
@@ -836,9 +877,9 @@ export async function getState(token: string): Promise<ChatState | null> {
     // A chat without an active room is treated as ended, never restored.
     await d
       .update(participants)
-      .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
+      .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
       .where(eq(participants.id, me.id));
-    status = "partner_left";
+    status = "connection_lost";
     me = (await findByToken(d, token)) ?? me;
   }
 

@@ -43,7 +43,8 @@ export function registerChatRoutes(app: Express) {
   router.post("/session", (req, res) =>
     respond(req, res, async () => {
       await sweep();
-      const participant = await startSession(readToken(req));
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const participant = await startSession(readToken(req), body.avoidAnimalKey);
       const state = await getState(participant.token);
       return { ok: true, token: participant.token, state };
     })
@@ -90,7 +91,8 @@ export function registerChatRoutes(app: Express) {
     respond(req, res, async () => {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
-      await joinQueue(token);
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      await joinQueue(token, body.rotateAnimal === true);
       const state = await getState(token);
       if (!state) return { ok: false, error: "no_session" };
       return { ok: true, state };

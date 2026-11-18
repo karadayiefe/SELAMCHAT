@@ -1,4 +1,4 @@
-export type ChatStatus = "idle" | "waiting" | "chatting" | "partner_left";
+export type ChatStatus = "idle" | "waiting" | "chatting" | "partner_left" | "connection_lost";
 
 export type Identity = {
   animalKey: string;
@@ -64,9 +64,10 @@ async function post(path: string, body: Record<string, unknown>): Promise<ChatRe
 }
 
 export const chatApi = {
-  session: (token: string | null) => post("session", token ? { token } : {}),
+  session: (token: string | null, avoidAnimalKey?: string | null) =>
+    post("session", { ...(token ? { token } : {}), ...(avoidAnimalKey ? { avoidAnimalKey } : {}) }),
   state: (token: string) => post("state", { token }),
-  join: (token: string) => post("join", { token }),
+  join: (token: string, rotateAnimal = false) => post("join", { token, rotateAnimal }),
   leave: (token: string) => post("leave", { token }),
   message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
   typing: (token: string) => post("typing", { token }),

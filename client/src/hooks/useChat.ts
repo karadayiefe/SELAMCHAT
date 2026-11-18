@@ -4,6 +4,7 @@ import { mergeUnconfirmedMessages } from "@/lib/chatState";
 
 const TOKEN_KEY = "mukchat.token";
 const RELOAD_MATCH_KEY = "mukalchat.reload-match";
+const ANIMAL_KEY = "mukalchat.animal-key";
 /** Keep search open long enough for students to join without using the chat-leave timeout. */
 const NO_ONE_AFTER_SECONDS = 30;
 
@@ -89,6 +90,7 @@ export function useChat() {
     try {
       // Kept per tab while this document is alive; pagehide rotates the token.
       sessionStorage.setItem(TOKEN_KEY, safeState.token);
+      sessionStorage.setItem(ANIMAL_KEY, safeState.me.animalKey);
       if (safeState.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
       else sessionStorage.removeItem(RELOAD_MATCH_KEY);
     } catch {
@@ -106,9 +108,10 @@ export function useChat() {
     const navigationType = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     let rejoinAfterReload = false;
     try {
-      rejoinAfterReload = navigationType?.type === "reload" && sessionStorage.getItem(RELOAD_MATCH_KEY) === "1";
+      const isReload = navigationType?.type === "reload";
+      rejoinAfterReload = isReload && sessionStorage.getItem(RELOAD_MATCH_KEY) === "1";
       sessionStorage.removeItem(RELOAD_MATCH_KEY);
-      if (rejoinAfterReload) sessionStorage.removeItem(TOKEN_KEY);
+      if (isReload) sessionStorage.removeItem(TOKEN_KEY);
     } catch { /* A fresh identity is best-effort when storage is blocked. */ }
 
     const sleep = (ms: number) =>
@@ -134,7 +137,9 @@ export function useChat() {
             token = createSessionToken();
             try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* Server still issues a session. */ }
           }
-          const res = await chatApi.session(token);
+          let avoidAnimalKey: string | null = null;
+          try { avoidAnimalKey = sessionStorage.getItem(ANIMAL_KEY); } catch { /* Best-effort identity rotation. */ }
+          const res = await chatApi.session(token, avoidAnimalKey);
           if (cancelled || pageLeavingRef.current) return;
           if (res.ok && res.state) {
             if (rejoinAfterReload) {
@@ -297,14 +302,14 @@ export function useChat() {
     return () => window.removeEventListener("pagehide", bye);
   }, []);
 
-  const join = useCallback(async () => {
+  const join = useCallback(async (rotateAnimal = false) => {
     const token = tokenRef.current;
     if (!token) return;
     const lifecycle = ++lifecycleRef.current;
     setBusy(true);
     setNotice(null);
     try {
-      const res = await chatApi.join(token);
+      const res = await chatApi.join(token, rotateAnimal);
       if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
     } catch {
       setConnectionIssue(true);
