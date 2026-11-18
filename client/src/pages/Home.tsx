@@ -3,6 +3,7 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { IdlePanel } from "@/components/chat/IdlePanel";
 import { LeftPanel } from "@/components/chat/LeftPanel";
 import { WaitingPanel } from "@/components/chat/WaitingPanel";
+import { ThemeSettings } from "@/components/chat/ThemeSettings";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
 
@@ -28,7 +29,10 @@ export default function Home() {
     <div className="page-shell">
       <header className="site-header">
         <Wordmark />
-        <LiveCounters online={online} activeChats={activeChats} />
+        <div className="header-actions">
+          <LiveCounters online={online} activeChats={activeChats} />
+          <ThemeSettings />
+        </div>
       </header>
 
       <main className="panel">

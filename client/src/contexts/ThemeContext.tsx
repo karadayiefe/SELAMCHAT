@@ -1,14 +1,25 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark" | "vice-city";
 
 interface ThemeContextType {
   theme: Theme;
+  setTheme: (theme: Theme) => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const THEME_STORAGE_KEY = "mukalchat-theme";
+
+function readStoredTheme(defaultTheme: Theme): Theme {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY) ?? localStorage.getItem("theme");
+    return stored === "light" || stored === "dark" || stored === "vice-city" ? stored : defaultTheme;
+  } catch {
+    return defaultTheme;
+  }
+}
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -21,35 +32,32 @@ export function ThemeProvider({
   defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  const [theme, setTheme] = useState<Theme>(() =>
+    switchable ? readStoredTheme(defaultTheme) : defaultTheme
+  );
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.dataset.theme = theme;
+    root.classList.toggle("dark", theme !== "light");
+    root.style.colorScheme = theme === "light" ? "light" : "dark";
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+        localStorage.setItem("theme", theme);
+      } catch {
+        // The selected theme still applies for this page if storage is unavailable.
+      }
     }
   }, [theme, switchable]);
 
   const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
+    ? () => setTheme(previous => (previous === "light" ? "dark" : "light"))
     : undefined;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
