@@ -4,6 +4,7 @@ import { IdlePanel } from "@/components/chat/IdlePanel";
 import { LeftPanel } from "@/components/chat/LeftPanel";
 import { WaitingPanel } from "@/components/chat/WaitingPanel";
 import { ThemeSettings } from "@/components/chat/ThemeSettings";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
 
@@ -55,6 +56,7 @@ export default function Home() {
   const online = state?.counters.online ?? 0;
   const activeChats = state?.counters.activeChats ?? 0;
   const ownLeaveNotice = status === "idle" && notice === "Sohbeti bitirdin. Her şey silindi.";
+  const { isCatMode, toggleCatMode } = useTheme();
 
   return (
     <div className="page-shell">
@@ -133,7 +135,15 @@ export default function Home() {
         <span className="hidden sm:inline" aria-hidden="true">
           ·
         </span>
-        <span className="hidden sm:inline">V1.0 BETA</span>
+        <button
+          type="button"
+          className="beta-easter-egg"
+          onClick={toggleCatMode}
+          aria-pressed={isCatMode}
+          title={isCatMode ? "Kedi modunu kapat" : "Gizli kedi modunu aç"}
+        >
+          V1.0 BETA
+        </button>
       </footer>
     </div>
   );

@@ -150,6 +150,43 @@
   --vice-yellow: #ffb458;
 }
 
+:root[data-theme="cat"] {
+  --ink: #2b211d;
+  --ink-soft: #3b2c25;
+  --surface: rgba(255, 248, 239, 0.92);
+  --surface-2: rgba(255, 237, 216, 0.96);
+  --line: rgba(91, 53, 30, 0.2);
+  --line-strong: rgba(91, 53, 30, 0.34);
+  --text: #35231b;
+  --text-dim: #755b4b;
+  --lime: #c83b24;
+  --amber: #f1a51c;
+  --background: var(--ink);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-dim);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--text);
+  --primary: var(--lime);
+  --primary-foreground: #fffaf4;
+  --destructive: #a62620;
+  --destructive-foreground: #ffffff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: rgba(200, 59, 36, 0.38);
+  --accent-hover: #e1502f;
+  --accent-glow: rgba(241, 165, 28, 0.3);
+  --accent-shadow: rgba(200, 59, 36, 0.34);
+  --soft-surface: rgba(255, 255, 255, 0.48);
+  --soft-surface-hover: rgba(255, 255, 255, 0.72);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -162,6 +199,7 @@
 
   body {
     @apply bg-background text-foreground;
+    position: relative;
     font-family: var(--font-body);
     min-height: 100dvh;
     background-image:
@@ -170,6 +208,25 @@
     transition: background-color 320ms ease, color 320ms ease, background-image 320ms ease;
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("/cat-easter-egg.jpg");
+    background-position: 0 0;
+    background-size: clamp(9rem, 17vw, 13rem) clamp(9rem, 17vw, 13rem);
+    background-repeat: repeat;
+    opacity: 0;
+    filter: saturate(0.9) contrast(1.04);
+    transition: opacity 500ms ease;
+  }
+
+  :root[data-theme="cat"] body::before {
+    opacity: 0.2;
   }
 
   button:not(:disabled),
@@ -859,6 +916,28 @@
     text-align: center;
   }
 
+  .beta-easter-egg {
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.18rem;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  .beta-easter-egg:hover,
+  .beta-easter-egg[aria-pressed="true"] {
+    color: var(--lime);
+    transform: translateY(-1px);
+  }
+
+  .beta-easter-egg:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--lime);
+    outline-offset: 3px;
+  }
+
   :root[data-theme="vice-city"] body {
     background-image:
       radial-gradient(ellipse 78% 46% at 50% -12%, rgba(123, 32, 143, 0.4), transparent 72%),
@@ -995,6 +1074,59 @@
   :root[data-theme="light"] .composer-input { background: rgba(255, 255, 255, 0.78); }
   :root[data-theme="light"] .btn-ghost { background: rgba(26, 35, 55, 0.035); }
   :root[data-theme="light"] .btn-ghost:hover:not(:disabled) { background: rgba(26, 35, 55, 0.08); }
+
+  :root[data-theme="cat"] body {
+    background-image:
+      radial-gradient(ellipse 72% 46% at 50% -12%, rgba(241, 165, 28, 0.32), transparent 72%),
+      linear-gradient(180deg, rgba(255, 241, 218, 0.36), rgba(197, 116, 52, 0.2));
+  }
+
+  :root[data-theme="cat"] .panel {
+    border-color: rgba(91, 53, 30, 0.25);
+    background: linear-gradient(145deg, rgba(255, 250, 244, 0.88), rgba(255, 237, 216, 0.72)), var(--surface);
+    box-shadow: 0 28px 76px -34px rgba(74, 39, 19, 0.64), 0 0 42px -24px rgba(241, 165, 28, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px);
+  }
+
+  :root[data-theme="cat"] .wordmark-mark {
+    background: linear-gradient(140deg, #8d241a, #c83b24 58%, #f1a51c);
+    color: #fffaf4;
+    box-shadow: 0 0 20px rgba(200, 59, 36, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  :root[data-theme="cat"] .wordmark-accent { color: #c83b24; }
+
+  :root[data-theme="cat"] .btn-primary,
+  :root[data-theme="cat"] .send-btn {
+    border-color: rgba(141, 36, 26, 0.38);
+    background-image: linear-gradient(110deg, #8d241a, #c83b24 54%, #e87520 78%, #f1a51c);
+    color: #fffaf4;
+    box-shadow: 0 12px 28px -12px rgba(141, 36, 26, 0.52), 0 0 28px -12px rgba(241, 165, 28, 0.45);
+  }
+
+  :root[data-theme="cat"] .btn-ghost,
+  :root[data-theme="cat"] .settings-trigger {
+    border-color: rgba(141, 36, 26, 0.22);
+    background: linear-gradient(145deg, rgba(255, 250, 244, 0.7), rgba(255, 223, 184, 0.7));
+    color: #5a3524;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 6px 18px rgba(91, 53, 30, 0.12);
+    backdrop-filter: blur(10px);
+  }
+
+  :root[data-theme="cat"] .counter-pill,
+  :root[data-theme="cat"] .chat-head,
+  :root[data-theme="cat"] .composer,
+  :root[data-theme="cat"] .fact-chip {
+    border-color: rgba(141, 36, 26, 0.17);
+    background-color: rgba(255, 248, 239, 0.72);
+    backdrop-filter: blur(10px);
+  }
+
+  :root[data-theme="cat"] .composer-input { background: rgba(255, 253, 249, 0.8); }
+
+  :root[data-theme="cat"] :is(.btn, .settings-trigger, .theme-option, .beta-easter-egg):focus-visible {
+    outline-color: #c83b24;
+  }
 
   @keyframes soft-pulse {
     0% {

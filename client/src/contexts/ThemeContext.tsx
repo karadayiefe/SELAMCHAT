@@ -5,6 +5,8 @@ export type Theme = "light" | "dark" | "vice-city";
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  isCatMode: boolean;
+  toggleCatMode: () => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
@@ -35,12 +37,14 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(() =>
     switchable ? readStoredTheme(defaultTheme) : defaultTheme
   );
+  const [isCatMode, setIsCatMode] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.classList.toggle("dark", theme !== "light");
-    root.style.colorScheme = theme === "light" ? "light" : "dark";
+    const activeTheme = isCatMode ? "cat" : theme;
+    root.dataset.theme = activeTheme;
+    root.classList.toggle("dark", activeTheme !== "light");
+    root.style.colorScheme = activeTheme === "light" ? "light" : "dark";
 
     if (switchable) {
       try {
@@ -50,14 +54,15 @@ export function ThemeProvider({
         // The selected theme still applies for this page if storage is unavailable.
       }
     }
-  }, [theme, switchable]);
+  }, [theme, isCatMode, switchable]);
 
   const toggleTheme = switchable
     ? () => setTheme(previous => (previous === "light" ? "dark" : "light"))
     : undefined;
+  const toggleCatMode = () => setIsCatMode(previous => !previous);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme, isCatMode, toggleCatMode, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
