@@ -980,6 +980,12 @@
     transition: color 180ms ease, transform 180ms ease;
   }
 
+  .beta-version-label {
+    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
   .brand-easter-egg:hover,
   .brand-easter-egg[aria-pressed="true"],
   .beta-changelog-link:hover {

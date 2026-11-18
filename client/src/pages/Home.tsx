@@ -144,6 +144,7 @@ export default function Home() {
         <span className="hidden sm:inline" aria-hidden="true">
           ·
         </span>
+        <span className="beta-version-label">V1.0 BETA</span>
         <Link href="/changelog" className="beta-changelog-link">
           CHANGELOG'U GÖR <span aria-hidden="true">→</span>
         </Link>
