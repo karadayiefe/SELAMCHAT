@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Expand, Sparkles } from "lucide-react";
+import { Copy, Sparkles } from "lucide-react";
 import type { RoomCardData } from "@/lib/chatApi";
 import {
   Dialog,
@@ -26,28 +26,16 @@ export function RoomCard({ card }: { card: RoomCardData }) {
 
   return (
     <>
-      <aside className="room-card-aside">
-        <button
-          type="button"
-          className="room-card-mini"
-          onClick={() => setOpen(true)}
-          aria-label="Sohbet Kartını büyüt"
-          aria-haspopup="dialog"
-        >
-          <span className="room-card-mini-title">
-            <Sparkles size={13} aria-hidden="true" />
-            Sohbet Kartı
-            <Expand size={13} className="room-card-expand" aria-hidden="true" />
-          </span>
-          <span className="room-card-mini-pair">
-            <span className="room-card-mini-animal" style={{ color: first.color }}>{first.emoji}</span>
-            <span className="room-card-x" aria-hidden="true">×</span>
-            <span className="room-card-mini-animal" style={{ color: second.color }}>{second.emoji}</span>
-          </span>
-          <span className="room-card-mini-names">{first.name} × {second.name}</span>
-          <code className="room-card-mini-code">{card.code}</code>
-        </button>
-      </aside>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm room-card-trigger shrink-0"
+        onClick={() => setOpen(true)}
+        aria-label="Sohbet Kartını aç"
+        aria-haspopup="dialog"
+      >
+        <Sparkles size={13} aria-hidden="true" />
+        <span>Sohbet Kartı</span>
+      </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="room-card-dialog">

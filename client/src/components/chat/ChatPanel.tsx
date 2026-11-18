@@ -1,5 +1,6 @@
 import { IdentityTile } from "@/components/chat/Brand";
-import type { ChatMessage, Identity } from "@/lib/chatApi";
+import { RoomCard } from "@/components/chat/RoomCard";
+import type { ChatMessage, Identity, RoomCardData } from "@/lib/chatApi";
 import { ArrowUp, Check, CheckCheck, Clock3, LogOut, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -62,6 +63,7 @@ function Bubble({
 export function ChatPanel({
   me,
   partner,
+  roomCard,
   messages,
   partnerTyping,
   busy,
@@ -71,6 +73,7 @@ export function ChatPanel({
 }: {
   me: Identity;
   partner: Identity;
+  roomCard: RoomCardData | null;
   messages: ChatMessage[];
   partnerTyping: boolean;
   busy: boolean;
@@ -121,10 +124,13 @@ export function ChatPanel({
           </div>
         </div>
 
-        <button type="button" className="btn btn-danger btn-sm shrink-0" onClick={onLeave} disabled={busy}>
-          <LogOut size={14} strokeWidth={2.4} aria-hidden="true" />
-          Ayrıl
-        </button>
+        <div className="chat-head-actions">
+          {roomCard && <RoomCard card={roomCard} />}
+          <button type="button" className="btn btn-danger btn-sm shrink-0" onClick={onLeave} disabled={busy}>
+            <LogOut size={14} strokeWidth={2.4} aria-hidden="true" />
+            Ayrıl
+          </button>
+        </div>
       </header>
 
       <div className="chat-scroll" ref={scrollRef}>

@@ -1,6 +1,5 @@
 import { LiveCounters, Wordmark } from "@/components/chat/Brand";
 import { ChatPanel } from "@/components/chat/ChatPanel";
-import { RoomCard } from "@/components/chat/RoomCard";
 import { IdlePanel } from "@/components/chat/IdlePanel";
 import { LeftPanel } from "@/components/chat/LeftPanel";
 import { WaitingPanel } from "@/components/chat/WaitingPanel";
@@ -71,19 +70,17 @@ export default function Home() {
             )}
 
             {status === "chatting" && state.partner ? (
-              <div className="chat-layout">
-                <ChatPanel
-                  me={state.me}
-                  partner={state.partner}
-                  messages={state.messages}
-                  partnerTyping={state.partnerTyping}
-                  busy={busy}
-                  onSend={send}
-                  onLeave={() => void leave()}
-                  onTyping={notifyTyping}
-                />
-                {state.roomCard && <RoomCard card={state.roomCard} />}
-              </div>
+              <ChatPanel
+                me={state.me}
+                partner={state.partner}
+                roomCard={state.roomCard}
+                messages={state.messages}
+                partnerTyping={state.partnerTyping}
+                busy={busy}
+                onSend={send}
+                onLeave={() => void leave()}
+                onTyping={notifyTyping}
+              />
             ) : status === "waiting" ? (
               <WaitingPanel
                 me={state.me}
