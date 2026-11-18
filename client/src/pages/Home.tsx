@@ -7,6 +7,36 @@ import { ThemeSettings } from "@/components/chat/ThemeSettings";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
 
+function VicePalm({ side }: { side: "left" | "right" }) {
+  return (
+    <svg className={`vice-palm vice-palm--${side}`} viewBox="0 0 240 360" fill="none" aria-hidden="true">
+      <g transform={side === "right" ? "translate(240 0) scale(-1 1)" : undefined}>
+        <path d="M108 359C111 290 122 210 139 115" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
+        <path d="M112 357C116 288 127 211 142 122" stroke="#ffb458" strokeOpacity="0.4" strokeWidth="2" strokeLinecap="round" />
+        <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M139 115C119 72 79 42 22 28" />
+          <path d="M139 115C101 83 58 67 10 75" />
+          <path d="M139 115C96 108 53 111 17 137" />
+          <path d="M139 115C106 137 78 161 57 190" />
+          <path d="M139 115C135 153 137 185 149 216" />
+          <path d="M139 115C162 145 190 165 222 177" />
+          <path d="M139 115C178 117 211 108 235 93" />
+          <path d="M139 115C168 77 194 52 219 38" />
+          <path d="M139 115C151 77 156 45 151 18" />
+        </g>
+        <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.78">
+          <path d="M120 83L116 64L100 71M104 70L100 52L84 60M87 55L81 39L66 46M70 42L63 29L47 37" />
+          <path d="M109 91L90 76L84 91M89 78L71 67L65 84M69 68L50 62L44 78M48 73L31 70L27 84" />
+          <path d="M105 103L82 96L80 112M83 98L60 95L60 111M63 97L41 98L42 114M43 104L24 110L25 124" />
+          <path d="M106 120L83 124L88 141M86 128L67 141L75 155M101 139L86 160L101 169M115 130L105 151L120 164" />
+          <path d="M131 149L118 171L133 188M138 166L134 189L149 205M153 140L168 159L162 175M171 148L191 162L183 179M169 112L191 106L186 125M190 108L212 100L204 120M158 83L174 65L184 82M178 66L196 49L202 68M146 72L150 50L164 63M151 47L151 27L166 41" />
+        </g>
+        <circle cx="139" cy="115" r="4.2" fill="currentColor" />
+      </g>
+    </svg>
+  );
+}
+
 export default function Home() {
   const {
     state,
@@ -29,14 +59,8 @@ export default function Home() {
   return (
     <div className="page-shell">
       <div className="vice-city-palms" aria-hidden="true">
-        <svg className="vice-palm vice-palm--left" viewBox="0 0 220 320" fill="none">
-          <path d="M96 314c10-79 20-142 28-213" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
-          <path d="M124 101C83 52 45 51 14 61c42 3 63 18 96 50C75 80 41 79 18 92c42-2 68 11 94 23-41 1-63 16-79 35 31-14 59-20 83-19-38 16-54 39-61 59 25-23 48-37 71-43-31 28-40 52-39 73 16-30 33-51 53-66-19 37-18 63-10 81 6-36 16-63 29-84 0 38 11 62 25 77-7-36-7-66-2-92 11 34 29 54 48 63-18-32-29-59-34-85 19 29 42 43 62 46-26-25-45-48-58-71 28 20 56 26 77 20-33-15-60-31-82-49 34 11 63 9 81-3-38-3-71-10-101-23 39 0 66-12 80-28-38 9-72 11-107 8 35-11 57-28 65-48-31 20-63 36-98 44 26-21 39-45 39-67-21 29-45 55-74 75Z" fill="currentColor" />
-        </svg>
-        <svg className="vice-palm vice-palm--right" viewBox="0 0 220 320" fill="none">
-          <path d="M122 314c-10-79-20-142-28-213" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
-          <path d="M96 101c41-49 79-50 110-40-42 3-63 18-96 50 35-31 69-32 92-19-42-2-68 11-94 23 41 1 63 16 79 35-31-14-59-20-83-19 38 16 54 39 61 59-25-23-48-37-71-43 31 28 40 52 39 73-16-30-33-51-53-66 19 37 18 63 10 81-6-36-16-63-29-84 0 38-11 62-25 77 7-36 7-66 2-92-11 34-29 54-48 63 18-32 29-59 34-85-19 29-42 43-62 46 26-25 45-48 58-71-28 20-56 26-77 20 33-15 60-31 82-49-34 11-63 9-81-3 38-3 71-10 101-23-39 0-66-12-80-28 38 9 72 11 107 8-35-11-57-28-65-48 31 20 63 36 98 44-26-21-39-45-39-67 21 29 45 55 74 75Z" fill="currentColor" />
-        </svg>
+        <VicePalm side="left" />
+        <VicePalm side="right" />
       </div>
       <header className="site-header">
         <Wordmark />
