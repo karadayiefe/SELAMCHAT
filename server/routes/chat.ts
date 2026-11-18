@@ -56,7 +56,6 @@ export function registerChatRoutes(app: Express) {
       if (!token) return { ok: false, error: "no_token" };
       const state = await getState(token);
       if (!state) return { ok: false, error: "no_session" };
-      await sweep();
       return { ok: true, state };
     })
   );
@@ -116,8 +115,7 @@ export function registerChatRoutes(app: Express) {
       if (!token) return { ok: false, error: "no_token" };
       const body = (req.body ?? {}) as Record<string, unknown>;
       const result = await sendMessage(token, body.body, body.clientId);
-      const state = await getState(token);
-      return { ...result, state };
+      return result;
     })
   );
 

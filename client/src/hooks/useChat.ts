@@ -10,7 +10,9 @@ const NO_ONE_AFTER_SECONDS = 30;
 
 function delayFor(hidden: boolean, status: ChatStatus) {
   if (hidden) return 10_000;
-  return status === "chatting" || status === "waiting" ? 1000 : 2500;
+  if (status === "chatting") return 350;
+  if (status === "waiting") return 700;
+  return 2500;
 }
 
 function createSessionToken() {
