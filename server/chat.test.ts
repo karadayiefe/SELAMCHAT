@@ -10,12 +10,12 @@ import {
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("keeps the 30-second search window separate from one-minute chat leases", () => {
+  it("keeps the search window, visible heartbeat fallback and hidden lease separate", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
     expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(60);
-    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(60);
+    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
     expect(getPartnerTimeoutSeconds(false)).toBe(60);
-    expect(getPartnerTimeoutSeconds(true)).toBe(60);
+    expect(getPartnerTimeoutSeconds(true)).toBe(30);
   });
 
   it("assigns a different animal when the previous identity is excluded", () => {

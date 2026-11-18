@@ -18,9 +18,10 @@ import { getDb } from "./db.js";
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** A participant who is away or stops heartbeating is removed after one minute. */
+/** Fallback for a foreground client that stops heartbeating; healthy visible chats have no duration limit. */
 export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 60;
-export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 60;
+/** Hidden tabs and locked screens expire after 30 seconds away. */
+export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
