@@ -133,7 +133,7 @@ export default function Home() {
         <span className="hidden sm:inline" aria-hidden="true">
           ·
         </span>
-        <span className="hidden sm:inline">MUKAL</span>
+        <span className="hidden sm:inline">V1.0 BETA</span>
       </footer>
     </div>
   );
