@@ -1,96 +1,159 @@
 
 <div align="center">
 
-# SELAMCHAT
+# 💬 SELAMCHAT
 
-### Anonymous conversations. No accounts. Just say hello.
+### MEET SOMEONE NEW. JUST SAY HELLO.
 
-**Üyelik yok. Profil yok. Sadece anonim sohbet.**
+**No accounts. No profiles. Just conversations.**
 
-<br />
+<br/>
 
-[![React](https://img.shields.io/badge/React-2026-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Enabled-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Express](https://img.shields.io/badge/Express-Backend-000000?logo=express&logoColor=white)](https://expressjs.com/)
-[![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel)](https://vercel.com/)
+[🇹🇷 TÜRKÇE](#turkce)　 •　 [🇬🇧 ENGLISH](#english)
 
-<br />
+<br/>
 
-**[🌐 SELAMCHAT](https://selamchat.fun/)**
+![React](https://img.shields.io/badge/React-2026-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
+![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-black?style=flat-square&logo=vercel)
+
+<br/>
+
+**A new conversation is one hello away.**
 
 </div>
 
 ---
 
-## 🇹🇷 Hakkında
+<a name="turkce"></a>
 
-**SELAMCHAT**, kullanıcıları üyelik veya profil oluşturmadan anonim olarak eşleştiren canlı sohbet uygulamasıdır.
+<div align="center">
 
-Her sohbet oturumuna otomatik olarak bir hayvan adı atanır. Böylece kullanıcılar kişisel profiller oluşturmadan sohbet edebilir.
+# 🇹🇷 Türkçe
 
-### ✨ Özellikler
+*Tanışmanın en sade yolu.*
 
-- **Anonim eşleşme:** Hesap veya profil oluşturmadan sohbete katıl.
-- **Canlı mesajlaşma:** Eşleştiğin kişiyle gerçek zamanlı sohbet et.
-- **Hayvan isimleri:** Her oturuma otomatik bir hayvan adı atanır.
-- **Geçici sohbet:** Mesajlar yalnızca aktif sohbet süresince tutulur.
-- **Otomatik temizleme:** Taraflardan biri ayrıldığında sohbet mesajları veritabanından silinir.
-- **Tema deneyimi:** Farklı temalar ve gizli sürprizler.
+</div>
 
-### 💬 Nasıl çalışır?
+## SELAMCHAT nedir?
 
-1. SELAMCHAT'i aç.
-2. Yeni kişi bul.
-3. Sistem seni başka bir kullanıcıyla eşleştirsin.
-4. Anonim sohbetine başla.
-5. Sohbetten ayrıldığında oturumun sona ersin.
+**SELAMCHAT**, kullanıcıları herhangi bir üyelik veya profil oluşturmadan anonim olarak eşleştiren canlı sohbet uygulamasıdır.
+
+Her sohbet oturumuna otomatik olarak bir hayvan adı atanır. Böylece kullanıcılar kişisel profillere ihtiyaç duymadan yeni insanlarla tanışabilir.
+
+## ✨ Özellikler
+
+| Özellik | Açıklama |
+|:---|:---|
+| 👤 Anonim eşleşme | Kayıt veya profil gerekmez. |
+| 💬 Canlı sohbet | Eşleştiğin kişiyle anlık mesajlaş. |
+| 🐾 Hayvan isimleri | Her oturuma otomatik bir hayvan adı atanır. |
+| 🧹 Otomatik temizleme | Taraflardan biri ayrıldığında mesajlar veritabanından silinir. |
+| ⏳ Geçici oturumlar | Mesajlar yalnızca aktif sohbet süresince tutulur. |
+
+## 🚀 Nasıl çalışır?
+
+<div align="center">
+
+**01 — BAŞLA**
+
+Yeni bir sohbet aramaya başla.
+
+↓
+
+**02 — EŞLEŞ**
+
+Sistem seni başka bir kullanıcıyla eşleştirsin.
+
+↓
+
+**03 — SOHBET ET**
+
+Anonim sohbetinin tadını çıkar.
+
+↓
+
+**04 — AYRIL**
+
+Sohbet sona erdiğinde mesajlar veritabanından temizlensin.
+
+</div>
+
+## 🔒 Gizlilik
+
+SELAMCHAT'te kullanıcıların profil oluşturması gerekmez. Mesajlar yalnızca aktif sohbet süresince tutulur ve taraflardan biri ayrıldığında veritabanından silinir.
 
 ---
 
-## 🇬🇧 About
+<a name="english"></a>
+
+<div align="center">
+
+# 🇬🇧 English
+
+*The simplest way to connect.*
+
+</div>
+
+## What is SELAMCHAT?
 
 **SELAMCHAT** is an anonymous live chat application that randomly matches users without requiring registration or profile creation.
 
-Each chat session is automatically assigned an animal name, allowing people to connect without creating personal profiles.
+Each chat session is automatically assigned an animal name, allowing users to connect without creating personal profiles.
 
-### ✨ Features
+## ✨ Features
 
-- **Anonymous matching:** Start chatting without an account or profile.
-- **Live messaging:** Chat with your matched partner.
-- **Animal identities:** Each session receives an automatically assigned animal name.
-- **Temporary conversations:** Messages are stored only while a chat is active.
-- **Automatic cleanup:** Chat messages are deleted from the database when either participant leaves.
-- **Theme experience:** Explore different themes and hidden surprises.
+| Feature | Description |
+|:---|:---|
+| 👤 Anonymous matching | No registration or profile required. |
+| 💬 Live chat | Exchange messages with your match. |
+| 🐾 Animal identities | Every session receives an automatically assigned animal name. |
+| 🧹 Automatic cleanup | Messages are deleted from the database when either participant leaves. |
+| ⏳ Temporary sessions | Messages are retained only during active conversations. |
 
-### 💬 How it works
+## 🚀 How it works
 
-1. Open SELAMCHAT.
-2. Find a new person.
-3. Get matched automatically.
-4. Start an anonymous conversation.
-5. Leave whenever you want to end the session.
+<div align="center">
 
----
+**01 — START**
 
-## 🛠️ Technology
+Start looking for a conversation.
 
-| Technology | Purpose |
-|---|---|
-| React | User interface |
-| TypeScript | Application logic |
-| Express.js | Backend API |
-| Drizzle ORM | Database operations |
-| TiDB Cloud | Database |
-| Vercel | Deployment |
+↓
+
+**02 — MATCH**
+
+Get paired with another user.
+
+↓
+
+**03 — CHAT**
+
+Enjoy your anonymous conversation.
+
+↓
+
+**04 — LEAVE**
+
+Once the session ends, messages are removed from the database.
+
+</div>
+
+## 🔒 Privacy
+
+SELAMCHAT does not require users to create profiles. Messages are stored only for the duration of an active chat and are deleted from the database when either participant leaves.
 
 ---
 
 <div align="center">
 
-### SELAMCHAT
+## SELAMCHAT
 
-**A simple hello can start a conversation.**
+**SAY HELLO. START A CONVERSATION.**
 
-Made with care.
+Made with ❤️
+
+[⬆ Back to top](#-selamchat)
 
 </div>
