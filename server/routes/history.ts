@@ -92,6 +92,8 @@ const translations: Record<string, string> = {
   "Remove presence write from fast message reads": "Hızlı mesaj okumalarında gereksiz çevrimiçi durum yazımı kaldırıldı.",
   "Reduce message send transaction locking": "Mesaj gönderimindeki veritabanı kilitlenmesi azaltıldı.",
   "Rebrand project from MUKALCHAT to SELAMCHAT": "MUKALCHAT markası SELAMCHAT olarak değiştirildi.",
+  "Correct changelog history and deployment statuses": "Changelog tarihleri, commit çevirileri ve CI/deployment durumları düzeltildi.",
+  "Complete translation coverage for history timeline": "Geçmiş zaman çizelgesinin çeviri kapsamı tamamlandı.",
 };
 
 function translate(subject: string) {
