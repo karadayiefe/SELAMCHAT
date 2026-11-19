@@ -1603,4 +1603,67 @@
     .settings-trigger span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
     .counter-pill { padding: 0.26rem 0.42rem; font-size: 0.62rem; }
   }
+
+  /* Static, editorial changelog cards. No repository history is rendered here. */
+  .changelog-dialog {
+    border: 1px solid color-mix(in srgb, var(--line-strong) 82%, transparent);
+    border-radius: 1.35rem;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, #05070b), var(--surface));
+    box-shadow: 0 28px 90px -42px rgba(0, 0, 0, 0.9);
+  }
+
+  .changelog-dialog-scroll { padding: 0.4rem 0.2rem 0.5rem 0; }
+  .changelog-list { gap: 0.8rem; }
+
+  .changelog-entry {
+    position: relative;
+    overflow: hidden;
+    padding: 1.05rem 1.1rem 1.15rem;
+    border-color: color-mix(in srgb, var(--line-strong) 58%, transparent);
+    border-radius: 1rem;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 95%, #121722), color-mix(in srgb, var(--surface) 86%, #05070b));
+    box-shadow: 0 14px 34px -28px rgba(0, 0, 0, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  .changelog-entry--live {
+    border-color: rgba(255, 76, 95, 0.42);
+    box-shadow: 0 0 0 1px rgba(255, 76, 95, 0.06), 0 18px 42px -28px rgba(255, 76, 95, 0.32);
+  }
+
+  .changelog-entry-meta { margin-bottom: 0.7rem; }
+  .changelog-date { color: var(--text-dim); font-size: 0.69rem; letter-spacing: 0.02em; }
+  .changelog-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #ff6574;
+    font-size: 0.63rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+  }
+
+  .changelog-live-badge svg { fill: currentColor; }
+  .changelog-entry h2 { font-size: clamp(1.04rem, 2.8vw, 1.22rem); letter-spacing: -0.025em; }
+  .changelog-entry > p { font-size: 0.84rem; }
+  .changelog-entry ul { margin-top: 0.85rem; font-size: 0.8rem; }
+  .changelog-entry li svg { color: var(--lime); }
+
+  /* These assets are intentionally scoped to their own cards only. */
+  .changelog-entry--vice-city {
+    background-image: linear-gradient(180deg, rgba(13, 8, 27, 0.52), rgba(13, 8, 27, 0.9)), url("/vice-city-changelog.webp");
+  }
+
+  .changelog-entry--cat {
+    background-image: linear-gradient(180deg, rgba(22, 14, 10, 0.55), rgba(22, 14, 10, 0.9)), url("/cat-easter-egg.jpg");
+  }
+
+  .timeline-vice-actions { margin-top: 0.95rem; }
+  .changelog-vice-button { margin-top: 0; }
+
+  @media (max-width: 520px) {
+    .changelog-dialog { width: min(94vw, 48rem); max-height: 90dvh; }
+    .changelog-entry { padding: 0.95rem 0.9rem 1rem; }
+    .changelog-entry-meta { align-items: flex-start; }
+    .timeline-vice-actions { flex-wrap: wrap; }
+  }
 }

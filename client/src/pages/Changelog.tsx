@@ -1,71 +1,59 @@
-import { CalendarDays, Check, CircleAlert, Pause, Play, Radio, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, Check, Pause, Play, Radio } from "lucide-react";
 
-type CommitRecord = {
-  kind: "commit";
-  number: number;
-  message: string;
+type ChangelogCard = {
+  id: string;
   date: string;
-  subject: string;
-  sha: string;
-  ciStatus: "success" | "failure" | "cancelled" | "timed_out" | "pending" | "not-run" | "not-found" | "unknown";
-  deploymentStatus: "success" | "failure" | "cancelled" | "timed_out" | "pending" | "not-run" | "not-found" | "unknown";
-  deploymentContext: string | null;
-  documentation: boolean;
-  live: boolean;
+  title: string;
+  description: string;
+  details?: string[];
+  live?: boolean;
+  viceCity?: boolean;
+  cat?: boolean;
 };
 
-type HistoryResponse = { ok: boolean; commits?: CommitRecord[]; error?: string };
-
-export const changes = [
+export const changes: ChangelogCard[] = [
   {
-    id: "origin",
-    date: "2026-11-17",
-    anchorSubject: "Initial MUKALCHAT",
-    eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
-    title: "HER ŞEYİN BAŞLANGICI",
-    description: "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
-    sectionLabel: "İlk gün:",
-    details: ["Sitenin temel hâli oluşturuldu.", "İlk eşleşmeler denendi.", "Üst üste 3 hata aldık. Evet, daha ilk günden sıçtık."],
+    id: "messages-faster",
+    date: "19.11.2026 · 14:47",
+    title: "MESAJLAR ARTIK DAHA HIZLI",
+    description: "Geri bildirimleriniz doğrultusunda mesajların geç iletilmesine neden olan sorunları iyileştirdik. Sohbet deneyimini hızlandırdık ve temalarda güncellemeler yaptık.",
+    live: true,
   },
   {
-    id: "improvements",
-    date: "2026-11-17",
-    anchorSubject: "Improve chat responsiveness and UI polish",
-    eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
-    title: "İLK ADIM VE GELİŞTİRMELER",
-    description: "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
-    sectionLabel: "Bu gün gelenler:",
-    details: ["56+ farklı hayvan eklendi.", "Sohbet bitince mesajlar temizleniyor.", "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor."],
+    id: "beta-release",
+    date: "18.11.2026 · 23:00",
+    title: "SELAMCHAT V1.0 BETA ARTIK YAYINDA",
+    description: "SELAMCHAT artık herkesin kullanımına açık. Üyelik veya profil oluşturmadan anonim şekilde yeni insanlarla sohbet edebilirsiniz.",
+  },
+  {
+    id: "cat-easter-egg",
+    date: "18.11.2026 · 21:31",
+    title: "BİR YERLERE KEDİ SAKLADIK",
+    description: "SELAMCHAT'in içinde küçük bir sürpriz gizli. Gizli kedi temasını keşfedebilecek misiniz?",
+    details: ["Temayı kendiniz bulun.", "Tıklayın, etrafı keşfedin; belki gizli kedi temasını ilk siz bulursunuz :)"],
+    cat: true,
   },
   {
     id: "vice-city",
-    date: "2026-11-18",
-    anchorSubject: "Redesign Vice City theme",
-    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
+    date: "18.11.2026 · 17:48",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
-    description: "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
+    description: "Vice City atmosferinden ilham alan özel tema SELAMCHAT'te.",
     details: ["GTA 6 özel teması eklendi.", "Blood In Your Eyes tema müziği eklendi."],
     viceCity: true,
   },
   {
-    id: "cat",
-    date: "2026-11-18",
-    anchorSubject: "Add cat easter egg theme",
-    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
-    title: "BİR YERLERE KEDİ SAKLADIK",
-    description: "Bir kedi teması Easter egg'i saklandı.",
-    details: ["Temayı kendiniz bulun.", "Tıklayın, etrafı keşfedin; belki gizli kedi temasını ilk siz bulursunuz."],
-    cat: true,
+    id: "chat-improvements",
+    date: "17.11.2026 · 23:26",
+    title: "SOHBET DENEYİMİ GELİŞİYOR",
+    description: "Eşleşme, bağlantı takibi ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
+    details: ["56'dan fazla hayvan kimliği eklendi.", "Sohbet bitince mesajlar temizleniyor.", "Katılımcılardan biri ayrıldığında oda güvenli şekilde kapanıyor.", "Eşleşme ve bağlantı yönetimi iyileştirildi."],
   },
   {
-    id: "beta",
-    date: "2026-11-18T23:00:00+03:00",
-    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026 · 23:00",
-    title: "MUKALCHAT V1.0 BETA",
-    description: "ŞU AN AÇILDI",
-    details: ["18 Kasım 2026, saat 23:00 itibarıyla MUKALCHAT artık sizinle."],
-    finale: true,
+    id: "beginning",
+    date: "17.11.2026 · 21:23",
+    title: "HER ŞEYİN BAŞLANGICI",
+    description: "SELAMCHAT'in yolculuğu küçük bir fikirle başladı. Üyelik olmadan anonim sohbet platformu oluşturmak istedik.",
+    details: ["Sitenin temeli oluşturuldu.", "İlk eşleşmeler denendi.", "Üst üste 3 hata aldık. Daha ilk günden sıçtık."],
   },
 ];
 
@@ -75,81 +63,37 @@ type ChangelogCardsProps = {
   onToggleViceMusic?: () => void;
 };
 
-function formatSpecialDate(value: string) {
-  const exact = value.includes("T");
-  const date = new Date(exact ? value : `${value}T12:00:00+03:00`);
-  const options: Intl.DateTimeFormatOptions = { timeZone: "Europe/Istanbul" };
-  return exact ? date.toLocaleString("tr-TR", options) : `${date.toLocaleDateString("tr-TR", options)} · saat belirtilmedi`;
-}
+function ChangelogCard({ change, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: ChangelogCard } & ChangelogCardsProps) {
+  const classes = [
+    "changelog-entry",
+    change.live ? "changelog-entry--live" : "",
+    change.viceCity ? "changelog-entry--vice-city" : "",
+    change.cat ? "changelog-entry--cat" : "",
+  ].filter(Boolean).join(" ");
 
-function statusLabel(status: CommitRecord["ciStatus"], kind: "ci" | "deployment") {
-  if (status === "success") return "Başarılı";
-  if (status === "failure") return "Başarısız";
-  if (status === "cancelled") return "İptal edildi";
-  if (status === "timed_out") return "Zaman aşımına uğradı";
-  if (status === "pending") return kind === "ci" ? "Bekliyor / Çalışıyor" : "Devam ediyor";
-  if (status === "not-run") return "Çalıştırılmadı";
-  if (status === "not-found") return "Deployment bulunamadı";
-  return "Bilinmiyor";
-}
-
-function statusIcon(status: CommitRecord["ciStatus"]) {
-  if (status === "success") return <Check size={13} />;
-  if (status === "failure" || status === "cancelled") return <X size={13} />;
-  return <CircleAlert size={13} />;
-}
-
-function SpecialCard({ change, resolvedDate, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: (typeof changes)[number]; resolvedDate?: string } & ChangelogCardsProps) {
   return (
-    <article className={`changelog-entry timeline-special${change.finale ? " changelog-entry--finale" : ""}${change.viceCity ? " changelog-entry--vice-city" : ""}${change.cat ? " changelog-entry--cat" : ""}`}>
+    <article className={classes}>
       <div className="changelog-entry-meta">
-        <span className="changelog-version">{change.eyebrow}</span>
-        <span className="changelog-date"><CalendarDays size={14} aria-hidden="true" />{formatSpecialDate(resolvedDate ?? change.date)}</span>
+        <span className="changelog-date"><CalendarDays size={14} aria-hidden="true" />{change.date}</span>
+        {change.live && <span className="changelog-live-badge"><Radio size={12} aria-hidden="true" /> CANLI</span>}
       </div>
       <h2>{change.title}</h2>
       <p className="changelog-entry-description">{change.description}</p>
-      {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
-      <ul>{change.details.map(detail => <li key={detail}><Check size={15} aria-hidden="true" /><span>{detail}</span></li>)}</ul>
-      {change.viceCity && onSelectViceCity && <div className="timeline-vice-actions">
-        <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>GTA 6 temasını seç</button>
-        {onToggleViceMusic && <button type="button" className="changelog-vice-button changelog-music-button changelog-icon-button" onClick={onToggleViceMusic} aria-pressed={viceMusicPlaying} aria-label={viceMusicPlaying ? "Blood In Your Eyes müziğini durdur" : "Blood In Your Eyes müziğini oynat"} title={viceMusicPlaying ? "Müziği durdur" : "Müziği oynat"}>{viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />}</button>}
-      </div>}
+      {change.details && <ul>{change.details.map(detail => <li key={detail}><Check size={15} aria-hidden="true" /><span>{detail}</span></li>)}</ul>}
+      {change.viceCity && onSelectViceCity && (
+        <div className="timeline-vice-actions">
+          <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>GTA 6 TEMASINI SEÇ</button>
+          {onToggleViceMusic && <button type="button" className="changelog-vice-button changelog-music-button changelog-icon-button" onClick={onToggleViceMusic} aria-pressed={viceMusicPlaying} aria-label={viceMusicPlaying ? "Blood In Your Eyes müziğini durdur" : "Blood In Your Eyes müziğini oynat"} title={viceMusicPlaying ? "Müziği durdur" : "Müziği oynat"}>{viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />}</button>}
+        </div>
+      )}
     </article>
   );
 }
 
-function formatRelative(date: string) {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 1000));
-  if (seconds < 60) return `${seconds} saniye önce`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} dakika önce`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} saat önce`;
-  return `${Math.floor(hours / 24)} gün önce`;
-}
-
-export function TimelinePanel({ onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: ChangelogCardsProps) {
-  const [history, setHistory] = useState<HistoryResponse | null>(null);
-  useEffect(() => { void fetch("/api/history", { cache: "no-store" }).then(response => response.json()).then(setHistory).catch(() => setHistory({ ok: false, error: "history_unavailable" })); }, []);
-  const records = useMemo(() => {
-    const commits = history?.commits ?? [];
-    return [...commits.map(commit => ({ ...commit, sortDate: new Date(commit.date).getTime() })), ...changes.map(change => {
-      const resolvedDate = change.anchorSubject ? commits.find(commit => commit.subject === change.anchorSubject)?.date ?? change.date : change.date;
-      return { kind: "special" as const, change, resolvedDate, sortDate: new Date(resolvedDate).getTime() };
-    })].sort((a, b) => b.sortDate - a.sortDate);
-  }, [history]);
-
-  return <div className="timeline-list">
-    {!history && <div className="timeline-loading">GitHub geçmişi getiriliyor…</div>}
-    {history && !history.ok && <div className="timeline-loading timeline-error">Geçmiş şu an getirilemedi. Tekrar deneyebilirsin.</div>}
-    {records.map(record => record.kind === "special" ? <SpecialCard key={record.change.id} change={record.change} resolvedDate={record.resolvedDate} onSelectViceCity={onSelectViceCity} viceMusicPlaying={viceMusicPlaying} onToggleViceMusic={onToggleViceMusic} /> : <article key={record.sha} className={`timeline-commit${record.live ? " timeline-commit--live" : ""}`}>
-      <div className="timeline-commit-top"><span className="timeline-number">#{record.number}</span>{record.documentation && <span className="timeline-doc-badge">DOKÜMANTASYON</span>}<span className="timeline-relative">{formatRelative(record.date)}</span>{record.live && <span className="live-badge"><Radio size={11} /> CANLI</span>}</div>
-      <p>{record.message}</p>
-      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}</span><span className={`build-status build-status--${record.ciStatus}`}>{statusIcon(record.ciStatus)}CI: {statusLabel(record.ciStatus, "ci")}</span><span className={`build-status build-status--${record.deploymentStatus}`}>{statusIcon(record.deploymentStatus)}Deploy: {statusLabel(record.deploymentStatus, "deployment")}</span></div>
-    </article>)}
-  </div>;
+export function TimelinePanel(props: ChangelogCardsProps) {
+  return <div className="changelog-list">{changes.map(change => <ChangelogCard key={change.id} change={change} {...props} />)}</div>;
 }
 
 export function ChangelogCards(props: ChangelogCardsProps) {
-  return <div className="changelog-list">{changes.map(change => <SpecialCard key={change.id} change={change} {...props} />)}</div>;
+  return <TimelinePanel {...props} />;
 }
