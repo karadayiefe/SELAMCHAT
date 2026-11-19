@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SELAMCHAT">
-  <rect width="64" height="64" rx="16" fill="#08090C" />
-  <path
-    d="M15 23a8 8 0 0 1 8-8h18a8 8 0 0 1 8 8v11a8 8 0 0 1-8 8H31l-9 8v-8h-.5A6.5 6.5 0 0 1 15 35.5Z"
-    fill="#D7FF4F"
-  />
-  <circle cx="26" cy="28.5" r="2.7" fill="#08090C" />
-  <circle cx="33" cy="28.5" r="2.7" fill="#08090C" />
-  <circle cx="40" cy="28.5" r="2.7" fill="#08090C" />
+  <defs>
+    <linearGradient id="favicon-surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#b8d0ee" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#favicon-surface)" />
+  <path d="M15 23a8 8 0 0 1 8-8h18a8 8 0 0 1 8 8v11a8 8 0 0 1-8 8H31l-9 8v-8h-.5A6.5 6.5 0 0 1 15 35.5Z" fill="#ffffff" />
+  <circle cx="26" cy="28.5" r="2.7" fill="#142035" />
+  <circle cx="33" cy="28.5" r="2.7" fill="#142035" />
+  <circle cx="40" cy="28.5" r="2.7" fill="#142035" />
 </svg>
