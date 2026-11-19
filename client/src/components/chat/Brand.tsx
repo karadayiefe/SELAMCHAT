@@ -13,7 +13,6 @@ export function Wordmark() {
           SELAM<span className="wordmark-accent">CHAT</span>
         </span>
       </div>
-      <span className="wordmark-tag">anonim ·  SELAM öğrencileri için.</span>
     </div>
   );
 }
