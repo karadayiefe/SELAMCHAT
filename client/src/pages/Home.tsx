@@ -145,7 +145,7 @@ export default function Home() {
           aria-pressed={isCatMode}
           title={isCatMode ? "Kedi modunu kapat" : "Gizli kedi modunu aç"}
         >
-          MUKALCHAT
+          SELAMCHAT
         </button>
         <span aria-hidden="true">·</span>
         <span>Mesajlar saklanmaz, sohbet bitince silinir</span>
@@ -161,7 +161,7 @@ export default function Home() {
       <Dialog open={changelogOpen} onOpenChange={setChangelogOpen}>
         <DialogContent className="changelog-dialog">
           <DialogHeader>
-            <DialogTitle>MUKALCHAT — GEÇMİŞİ GÖR</DialogTitle>
+            <DialogTitle>SELAMCHAT — GEÇMİŞİ GÖR</DialogTitle>
           </DialogHeader>
           <div className="changelog-dialog-scroll">
             <TimelinePanel

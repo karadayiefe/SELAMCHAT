@@ -2,7 +2,7 @@ import { bigint, boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, un
 
 /**
  * Core user table backing auth flow.
- * MUKALCHAT is fully anonymous, so this table stays unused; it is kept so the
+ * SELAMCHAT is fully anonymous, so this table stays unused; it is kept so the
  * starter's helpers keep working if authentication is ever added.
  */
 export const users = mysqlTable("users", {

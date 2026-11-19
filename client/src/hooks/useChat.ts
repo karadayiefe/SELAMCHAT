@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { chatApi, type ChatMessage, type ChatState, type ChatStatus } from "@/lib/chatApi";
 import { mergeUnconfirmedMessages } from "@/lib/chatState";
 
-const TOKEN_KEY = "mukchat.token";
-const RELOAD_MATCH_KEY = "mukalchat.reload-match";
-const ANIMAL_KEY = "mukalchat.animal-key";
+const TOKEN_KEY = "selamchat.token";
+const RELOAD_MATCH_KEY = "selamchat.reload-match";
+const ANIMAL_KEY = "selamchat.animal-key";
 /** Keep search open long enough for students to join without using the chat-leave timeout. */
 const NO_ONE_AFTER_SECONDS = 30;
 
@@ -224,7 +224,7 @@ export function useChat() {
       if (token) {
         let version = Math.max(Date.now(), lastVisibilityVersion + 1);
         try {
-          const key = `mukalchat:visibility-version:${token}`;
+          const key = `selamchat:visibility-version:${token}`;
           const stored = Number(window.sessionStorage.getItem(key) ?? 0);
           if (Number.isSafeInteger(stored)) version = Math.max(version, stored + 1);
           window.sessionStorage.setItem(key, String(version));

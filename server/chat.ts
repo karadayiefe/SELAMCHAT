@@ -5,7 +5,7 @@ import { messages, participants, rooms } from "../drizzle/schema.js";
 import { getDb } from "./db.js";
 
 /**
- * MUKALCHAT server logic.
+ * SELAMCHAT server logic.
  *
  * Design notes:
  * - No accounts, no profiles. A visitor is a row with a random animal identity

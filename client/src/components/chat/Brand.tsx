@@ -12,11 +12,11 @@ export function Wordmark() {
             />
           </svg>
         </span>
-        <span aria-label="MUKALCHAT">
-          MUKAL<span className="wordmark-accent">CHAT</span>
+        <span aria-label="SELAMCHAT">
+          SELAM<span className="wordmark-accent">CHAT</span>
         </span>
       </div>
-      <span className="wordmark-tag">anonim ·  MUKal öğrencileri için.</span>
+      <span className="wordmark-tag">anonim ·  SELAM öğrencileri için.</span>
     </div>
   );
 }

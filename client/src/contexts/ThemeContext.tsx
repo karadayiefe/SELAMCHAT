@@ -16,8 +16,8 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-const THEME_STORAGE_KEY = "mukalchat-theme";
-const CAT_SOUND_STORAGE_KEY = "mukalchat-cat-sound";
+const THEME_STORAGE_KEY = "selamchat-theme";
+const CAT_SOUND_STORAGE_KEY = "selamchat-cat-sound";
 
 function readStoredTheme(defaultTheme: Theme): Theme {
   try {

@@ -1,9 +1,9 @@
-# MUKALCHAT — Tamamlanan kapsam
+# SELAMCHAT — Tamamlanan kapsam
 
 ## 1. Anonim kimlik ve görünür marka
 - Siteye giren her kullanıcıya otomatik olarak rastgele bir hayvan adı, emoji ve sabit rengi atanır; üyelik, e-posta, şifre veya profil gerekmez.
 - Tarayıcı sekmesi kimliği sayfa yenilenince korunur; ayrı sekmeler bağımsız kullanıcı kimliği alır.
-- Sitede, sekme başlığında, metadata’da, logoda ve favicon’da görünen marka MUKALCHAT’tir.
+- Sitede, sekme başlığında, metadata’da, logoda ve favicon’da görünen marka SELAMCHAT’tir.
 
 ## 2. Sayaçlar ve rastgele eşleşme
 - Sağ üstte "Canlı Bağlantı: X" ve "Aktif Sohbet: Y" sayaçları bağlı kullanıcılar/aktif sohbetleri düzenli aralıklarla günceller.
@@ -23,5 +23,5 @@
 - Yeni eşleşme yeni oda kimliğiyle başlar; önceki odanın mesajları yeni sohbete taşınmaz.
 
 ## 5. Production yayını
-- Üretim alanı `https://mukchat-d2t9zdrz.manus.space/` public; Manus deployment durumu başarılı. 17 Kasım 2026 testinde IPv4 DNS, TLS 1.2/1.3 sertifika doğrulaması, HTTP→HTTPS 301, HTTPS ana sayfa 200 ve `/api/health` 200 alındı.
+- Üretim alanı `https://selamchat.fun/` public; Manus deployment durumu başarılı. 17 Kasım 2026 testinde IPv4 DNS, TLS 1.2/1.3 sertifika doğrulaması, HTTP→HTTPS 301, HTTPS ana sayfa 200 ve `/api/health` 200 alındı.
 - DNS AAAA kayıtları yayımlı; bu Sandbox’ta IPv6 ağına rota olmadığından IPv6 TLS handshake’i burada doğrulanamadı. Tam test kanıtı ve kapsam sınırı `DOMAIN-DIAGNOSTICS.md` içindedir.

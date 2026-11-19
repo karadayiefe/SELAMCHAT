@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 
 const OWNER = "karadayiefe";
-const REPO = "MUKALCHAT";
+const REPO = "SELAMCHAT";
 const API_URL = `https://api.github.com/repos/${OWNER}/${REPO}/commits?per_page=100`;
 const CACHE_MS = 30_000;
 
@@ -33,8 +33,8 @@ type HistoryPayload = {
 let cached: { expiresAt: number; payload: HistoryPayload } | null = null;
 
 const translations: Record<string, string> = {
-  "Initial MUKALCHAT": "MUKALCHAT’in ilk sürümü oluşturuldu.",
-  "Prepare MUKALCHAT for Vercel deployment": "MUKALCHAT, Vercel deployment sürecine hazırlandı.",
+  "Initial MUKALCHAT": "SELAMCHAT’in ilk sürümü oluşturuldu.",
+  "Prepare MUKALCHAT for Vercel deployment": "SELAMCHAT, Vercel deployment sürecine hazırlandı.",
   "Update pnpm lockfile for deployment": "Deployment için pnpm kilit dosyası güncellendi.",
   "Fix API routing on Vercel": "Vercel üzerindeki API yönlendirmesi düzeltildi.",
   "Fix Vercel API routing": "Vercel API yönlendirmesi düzeltildi.",
@@ -85,7 +85,7 @@ function noStore(res: Response) {
 async function getTimeline(): Promise<HistoryPayload> {
   if (cached && cached.expiresAt > Date.now()) return cached.payload;
   const response = await fetch(API_URL, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "MUKALCHAT-history" },
+    headers: { Accept: "application/vnd.github+json", "User-Agent": "SELAMCHAT-history" },
     signal: AbortSignal.timeout(12_000),
   });
   if (!response.ok) throw new Error(`github_${response.status}`);
