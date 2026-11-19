@@ -517,10 +517,14 @@ export async function sendMessage(
 
   const roomId = me.roomId;
   const inserted = await d.transaction(async tx => {
-    const roomMembers = await lockRoomParticipants(tx, roomId, me.id);
-    const current = roomMembers.find(
-      row => row.id === me.id && row.roomId === roomId && row.status === "chatting"
-    );
+    // Sending only needs to serialize the sender's lifecycle row. Locking the
+    // partner too made every message wait behind unrelated presence updates.
+    const [current] = await tx
+      .select()
+      .from(participants)
+      .where(and(eq(participants.id, me.id), eq(participants.roomId, roomId), eq(participants.status, "chatting")))
+      .for("update")
+      .limit(1);
     if (!current) return false;
 
     const [room] = await tx
