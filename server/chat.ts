@@ -932,11 +932,6 @@ export async function getMessages(token: string): Promise<ChatMessage[] | null> 
   if (!me) return null;
   if (me.status !== "chatting" || !me.roomId) return [];
 
-  await d
-    .update(participants)
-    .set({ lastSeen: sql`NOW()` })
-    .where(eq(participants.id, me.id));
-
   const rows = await d
     .select({
       id: messages.id,
