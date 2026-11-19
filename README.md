@@ -16,7 +16,7 @@
 
 <br />
 
-**[🌐 SELAMCHAT](https://mukalchat.fun/)**
+**[🌐 SELAMCHAT](https://selamchat.fun/)**
 
 </div>
 
