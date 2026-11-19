@@ -101,6 +101,14 @@ export function useChat() {
     setState(safeState);
   }, []);
 
+  const applyMessages = useCallback((messages: ChatMessage[]) => {
+    const previous = stateRef.current;
+    if (!previous || previous.status !== "chatting") return;
+    const next = mergeUnconfirmedMessages(previous, { ...previous, messages });
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
   // Main session + polling loop.
   useEffect(() => {
     let cancelled = false;
@@ -130,6 +138,7 @@ export function useChat() {
 
     const loop = async () => {
       let announcedReady = false;
+      let fastPolls = 0;
 
       const establish = async () => {
         if (pageLeavingRef.current) return;
@@ -182,11 +191,17 @@ export function useChat() {
         const pollStartedAt = performance.now();
         const lifecycle = lifecycleRef.current;
         try {
-          const res = await chatApi.state(token);
+          fastPolls += 1;
+          const res = statusRef.current === "chatting" && fastPolls % 5 !== 0
+            ? await chatApi.messages(token)
+            : await chatApi.state(token);
           if (cancelled || pageLeavingRef.current) break;
           if (lifecycle !== lifecycleRef.current) continue;
 
-          if (res.ok && res.state) {
+          if (res.ok && res.messages && statusRef.current === "chatting") {
+            applyMessages(res.messages);
+            setConnectionIssue(false);
+          } else if (res.ok && res.state) {
             apply(res.state);
             setConnectionIssue(false);
           } else if (res.error === "no_session") {
@@ -244,7 +259,7 @@ export function useChat() {
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
       wakeSleep = null;
     };
-  }, [apply]);
+  }, [apply, applyMessages]);
 
   // Counts how long the visitor has been waiting before the 30-second notice.
   useEffect(() => {

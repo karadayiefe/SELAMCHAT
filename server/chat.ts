@@ -920,3 +920,52 @@ export async function getState(token: string): Promise<ChatState | null> {
     serverTime: new Date().toISOString(),
   };
 }
+
+/**
+ * Fast foreground read used between full lifecycle checks. It intentionally
+ * avoids room locks, receipt writes and online counters so a message never
+ * waits behind presence housekeeping.
+ */
+export async function getMessages(token: string): Promise<ChatMessage[] | null> {
+  const d = await db();
+  const me = await findByToken(d, token);
+  if (!me) return null;
+  if (me.status !== "chatting" || !me.roomId) return [];
+
+  await d
+    .update(participants)
+    .set({ lastSeen: sql`NOW()` })
+    .where(eq(participants.id, me.id));
+
+  const rows = await d
+    .select({
+      id: messages.id,
+      clientId: messages.clientId,
+      body: messages.body,
+      senderId: messages.senderId,
+      createdAt: messages.createdAt,
+      senderName: participants.displayName,
+      senderEmoji: participants.emoji,
+      senderColor: participants.color,
+      deliveredAt: messages.deliveredAt,
+      readAt: messages.readAt,
+    })
+    .from(messages)
+    .innerJoin(participants, eq(participants.id, messages.senderId))
+    .where(eq(messages.roomId, me.roomId))
+    .orderBy(asc(messages.id))
+    .limit(MAX_MESSAGES_PER_ROOM);
+
+  return rows.map(row => ({
+    id: row.id,
+    clientId: row.clientId,
+    body: row.body,
+    mine: row.senderId === me.id,
+    senderName: row.senderName,
+    senderEmoji: row.senderEmoji,
+    senderColor: row.senderColor,
+    createdAt: row.createdAt.toISOString(),
+    deliveredAt: row.deliveredAt?.toISOString() ?? null,
+    readAt: row.readAt?.toISOString() ?? null,
+  }));
+}

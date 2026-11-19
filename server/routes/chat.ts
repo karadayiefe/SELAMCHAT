@@ -10,6 +10,7 @@ import {
   setVisibility,
   startSession,
   sweep,
+  getMessages,
 } from "../chat.js";
 
 function noStore(res: Response) {
@@ -57,6 +58,16 @@ export function registerChatRoutes(app: Express) {
       const state = await getState(token);
       if (!state) return { ok: false, error: "no_session" };
       return { ok: true, state };
+    })
+  );
+
+  router.post("/messages", (req, res) =>
+    respond(req, res, async () => {
+      const token = readToken(req);
+      if (!token) return { ok: false, error: "no_token" };
+      const messages = await getMessages(token);
+      if (messages === null) return { ok: false, error: "no_session" };
+      return { ok: true, messages };
     })
   );
 

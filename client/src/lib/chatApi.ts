@@ -45,6 +45,7 @@ export type ChatResponse = {
   error?: string;
   token?: string;
   state?: ChatState | null;
+  messages?: ChatMessage[];
 };
 
 async function post(path: string, body: Record<string, unknown>): Promise<ChatResponse> {
@@ -67,6 +68,7 @@ export const chatApi = {
   session: (token: string | null, avoidAnimalKey?: string | null) =>
     post("session", { ...(token ? { token } : {}), ...(avoidAnimalKey ? { avoidAnimalKey } : {}) }),
   state: (token: string) => post("state", { token }),
+  messages: (token: string) => post("messages", { token }),
   join: (token: string, rotateAnimal = false) => post("join", { token, rotateAnimal }),
   leave: (token: string) => post("leave", { token }),
   message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
