@@ -1,142 +1,171 @@
- <div align="center">
+<div align="center">
 
 # SELAMCHAT
 
-**Anonymous real-time conversations. No accounts. No profiles. Just connection.**
+**Anonymous conversations. Real-time connections. No accounts.**
 
-[![Website](https://img.shields.io/badge/WEBSITE-selamchat.fun-7a4dff?style=flat-square&labelColor=0d0d10)](https://selamchat.fun)
-[![Repository](https://img.shields.io/badge/GitHub-Repository-ffffff?style=flat-square&logo=github&logoColor=white&labelColor=0d0d10&color=7a4dff)](https://github.com/karadayiefe/SELAMCHAT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Application-3178c6?style=flat-square&logo=typescript&logoColor=white&labelColor=0d0d10)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-Frontend-61dafb?style=flat-square&logo=react&logoColor=white&labelColor=0d0d10)](https://react.dev/)
-[![License](https://img.shields.io/badge/license-see_repository-534dff?style=flat-square&labelColor=0d0d10)](./LICENSE)
+Meet someone new. Start with a hello.
 
-[Website](https://selamchat.fun) • [Features](#features) • [How It Works](#how-it-works) • [Architecture](#architecture) • [Getting Started](#getting-started) • [Privacy](#privacy)
+[![Live Website](https://img.shields.io/badge/LIVE-selamchat.fun-7a4dff?style=flat-square&labelColor=0d0d10)](https://selamchat.fun)
+[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=61dafb&labelColor=0d0d10)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white&labelColor=0d0d10)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white&labelColor=0d0d10)](https://vite.dev/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.18-f69220?style=flat-square&logo=pnpm&logoColor=white&labelColor=0d0d10)](https://pnpm.io/)
 
-<br/>
+[Website](https://selamchat.fun) · [Features](#features) · [How It Works](#how-it-works) · [Architecture](#architecture) · [Run Locally](#run-locally) · [Privacy](#privacy)
 
-<img src="./selamchat-preview.png" alt="SELAMCHAT — Anonymous Live Chat" width="100%" />
+<br />
 
-<br/>
+<img src="./selamchat-preview.png" alt="SELAMCHAT application preview" width="100%" />
 
-*Every conversation starts with a hello.*
+<br />
+
+*Less introduction. More conversation.*
 
 </div>
 
 ---
 
-## Overview
+## About
 
-SELAMCHAT is an anonymous live chat platform that randomly connects people for spontaneous conversations.
+SELAMCHAT is an anonymous live chat platform that randomly pairs visitors for spontaneous one-to-one conversations.
 
-No registration. No accounts. No profiles.
-
-Every session receives a temporary animal identity. Join the queue, meet someone new, and start talking.
+There are no accounts to create, profiles to maintain, or lengthy onboarding steps. Each visitor receives a temporary animal identity, joins the matching queue, and can start talking when a connection is found.
 
 ## Features
 
-| Feature | Description |
+| Feature | What it does |
 |:--|:--|
-| **Anonymous Matching** | Connect with another person without creating an account. |
-| **Real-time Messaging** | Exchange messages during live conversations. |
-| **Temporary Identities** | Every session receives an automatically assigned animal name. |
-| **Random Connections** | Meet someone new through the matching queue. |
-| **Temporary Sessions** | Conversations exist only while the session is active. |
-| **Automatic Cleanup** | Messages are deleted when either participant leaves. |
-
----
+| **Anonymous sessions** | Start chatting without registering or creating a public profile. |
+| **Random matching** | Join a queue and get paired with another available visitor. |
+| **Temporary animal identities** | Receive an automatically assigned animal name and visual identity. |
+| **Live chat experience** | Send and receive messages, with delivery and read-state support. |
+| **Presence awareness** | Track chat activity and visibility to handle disconnected or inactive sessions. |
+| **Session cleanup** | Active room messages are removed when a conversation ends or an abandoned session is cleaned up. |
+| **Custom themes** | Personalize the interface, including the Vice City theme. |
 
 ## How It Works
 
-<div align="center">
-
-| 01 | 02 | 03 | 04 |
-|:--:|:--:|:--:|:--:|
-| **JOIN** | **MATCH** | **CHAT** | **LEAVE** |
-| Enter the queue. | Meet someone. | Start talking. | Leave anytime. |
-
-</div>
-
----
+1. **Join** — Open SELAMCHAT and enter the matching queue.
+2. **Match** — The server pairs you with another available visitor.
+3. **Chat** — Exchange messages using temporary animal identities.
+4. **Leave** — End the conversation whenever you want. The room is closed and its messages are cleaned up.
 
 ## Architecture
 
-SELAMCHAT uses a React and TypeScript frontend with an Express.js backend and Drizzle ORM for database operations.
+SELAMCHAT uses a React and TypeScript client, an Express server, and Drizzle ORM for MySQL-compatible database operations.
+
+```mermaid
+flowchart TD
+    A["Browser · React + TypeScript"] -->|"JSON HTTP API"| B["Express.js"]
+    B --> C["Chat & Session Logic"]
+    C --> D["Drizzle ORM"]
+    D --> E[("MySQL-compatible database")]
+    F["Scheduled cleanup"] --> B
+```
+
+### Repository Structure
 
 ```text
 SELAMCHAT/
-├── client/
-│   └── src/              # React application
-├── server/                # Backend services
-├── api/                   # API integration
-├── shared/                # Shared application code
-├── drizzle/               # Database schema and migrations
-├── patches/               # Project patches
-├── .github/               # GitHub configuration
+├── api/              # Vercel API entry points
+├── client/           # React application
+│   ├── public/       # Static assets, themes and audio
+│   └── src/          # UI, pages, hooks and chat client
+├── drizzle/          # Database schema and migrations
+├── patches/          # Package patches
+├── server/           # Express routes and chat services
+│   └── _core/        # Server setup and platform utilities
+├── shared/           # Shared types and utilities
 ├── Dockerfile
 ├── package.json
+├── pnpm-lock.yaml
+├── vercel.json
 └── README.md
 ```
 
----
+## Technology Stack
 
-## Getting Started
+| Technology | Role |
+|:--|:--|
+| React 19 | User interface |
+| TypeScript 5.9 | Application language |
+| Vite 7 | Frontend tooling and build |
+| Express.js 4 | HTTP server and API |
+| Drizzle ORM | Database access and schema |
+| MySQL2 | MySQL-compatible database driver |
+| Vitest | Automated tests |
+| pnpm 10 | Package management |
+| Vercel | Hosting and scheduled cleanup |
 
-### Prerequisites
+## Run Locally
 
-- Node.js
-- npm
-- Git
+### Requirements
 
-### Installation
+- Node.js 22 or later
+- Corepack
+- A MySQL-compatible database for chat functionality
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/karadayiefe/SELAMCHAT.git
-
 cd SELAMCHAT
-
-npm install
 ```
 
-### Development
+### 2. Install dependencies
 
 ```bash
-npm run dev
+corepack enable
+pnpm install
 ```
 
-*Available scripts and environment variables are defined in the project configuration.*
+### 3. Configure the database
 
----
+Set `DATABASE_URL` to your MySQL-compatible database connection string in your local environment.
 
-## Technology Stack
+### 4. Start development
 
-| Technology | Purpose |
+```bash
+pnpm dev
+```
+
+The development script uses `NODE_ENV=development`; on Windows, run it from a compatible shell such as Git Bash or WSL.
+
+## Project Commands
+
+| Command | Description |
 |:--|:--|
-| React | User interface |
-| TypeScript | Application development |
-| Express.js | Backend API |
-| Drizzle ORM | Database operations |
-| Vercel | Deployment |
+| `pnpm dev` | Start the development server |
+| `pnpm build` | Build the client and server |
+| `pnpm build:static` | Build the static client for deployment |
+| `pnpm start` | Run the production server |
+| `pnpm check` | Run TypeScript checks |
+| `pnpm test` | Run the Vitest test suite |
+| `pnpm format` | Format project files |
+| `pnpm db:migrate` | Apply database migrations |
 
----
+## Privacy & Session Lifecycle
 
-## Privacy
+SELAMCHAT is designed around temporary, anonymous chat sessions.
 
-Privacy is a core part of the SELAMCHAT experience.
+- Visitors do not need to create an account or public profile.
+- A random session token identifies a visitor during their session.
+- Messages belong to an active chat room rather than a permanent chat history.
+- When a participant leaves, the room is closed and its messages are deleted.
+- If a connection disappears unexpectedly, inactive sessions are cleaned up through timeout handling and scheduled cleanup.
 
-- No account creation or personal profiles.
-- Temporary identities for conversations.
-- Messages are intended to exist only during active sessions.
-- Messages are deleted from the database when either participant leaves.
+These behaviors describe the application's session lifecycle; they should not be interpreted as a claim of end-to-end encryption.
 
----
+## Contributing & Feedback
 
-## Project
+Found a bug or have an idea?
 
-**Live application:** [selamchat.fun](https://selamchat.fun)
+- [Report a bug](https://github.com/karadayiefe/SELAMCHAT/issues/new)
+- [Request a feature](https://github.com/karadayiefe/SELAMCHAT/issues/new)
+- [Browse the source](https://github.com/karadayiefe/SELAMCHAT)
 
-**Source code:** [GitHub Repository](https://github.com/karadayiefe/SELAMCHAT)
-
-**Issues and feedback:** [GitHub Issues](https://github.com/karadayiefe/SELAMCHAT/issues)
+Clear reproduction steps and concise suggestions are always helpful.
 
 ---
 
@@ -144,10 +173,10 @@ Privacy is a core part of the SELAMCHAT experience.
 
 ## SELAMCHAT
 
-**Less introduction. More conversation.**
+**A new conversation is one click away.**
 
-[![Visit SELAMCHAT](https://img.shields.io/badge/OPEN_SELAMCHAT-7a4dff?style=for-the-badge&labelColor=0d0d10)](https://selamchat.fun)
+[![Open SELAMCHAT](https://img.shields.io/badge/OPEN_SELAMCHAT-7a4dff?style=for-the-badge&labelColor=0d0d10)](https://selamchat.fun)
 
-<sub>Built for spontaneous connections.</sub>
+*Built for spontaneous connections.*
 
 </div>
