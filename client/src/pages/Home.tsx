@@ -120,14 +120,14 @@ export default function Home() {
         </span>
         <span className="beta-version-label">V1.0 BETA</span>
         <button type="button" className="beta-changelog-link" onClick={() => setChangelogOpen(true)}>
-          CHANGELOG'U GÖR <span aria-hidden="true">→</span>
+          GEÇMİŞİ GÖR <span aria-hidden="true">→</span>
         </button>
       </footer>
 
       <Dialog open={changelogOpen} onOpenChange={setChangelogOpen}>
         <DialogContent className="changelog-dialog">
           <DialogHeader>
-            <DialogTitle>SELAMCHAT — CHANGELOG</DialogTitle>
+            <DialogTitle>SELAMCHAT — GEÇMİŞ</DialogTitle>
           </DialogHeader>
           <div className="changelog-dialog-scroll">
             <TimelinePanel
