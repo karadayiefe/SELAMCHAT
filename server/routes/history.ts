@@ -17,7 +17,8 @@ type GitHubCommit = {
 
 type GitHubStatus = { state?: string; context?: string; description?: string | null; target_url?: string | null };
 type GitHubCheckRun = { status?: string; conclusion?: string | null };
-type VerificationStatus = "success" | "failure" | "pending" | "unknown";
+type VerificationStatus = "success" | "failure" | "cancelled" | "timed_out" | "pending" | "not-run" | "not-found" | "unknown";
+type WorkflowAvailability = boolean | "unavailable";
 type VerificationResult = {
   ciStatus: VerificationStatus;
   deployment: { status: VerificationStatus; context: string | null };
@@ -33,6 +34,7 @@ type TimelineCommit = {
   ciStatus: VerificationStatus;
   deploymentStatus: VerificationStatus;
   deploymentContext: string | null;
+  documentation: boolean;
   live: boolean;
 };
 
@@ -44,7 +46,7 @@ type HistoryPayload = {
 
 let cached: { expiresAt: number; payload: HistoryPayload } | null = null;
 const verificationCache = new Map<string, VerificationResult>();
-let workflowsCache: { expiresAt: number; hasWorkflows: boolean } | null = null;
+let workflowsCache: { expiresAt: number; hasWorkflows: WorkflowAvailability } | null = null;
 
 // Exact subject -> visitor-facing Turkish explanation. Historical brand names
 // intentionally remain in the historical entries.
@@ -94,6 +96,8 @@ const translations: Record<string, string> = {
   "Rebrand project from MUKALCHAT to SELAMCHAT": "MUKALCHAT markası SELAMCHAT olarak değiştirildi.",
   "Correct changelog history and deployment statuses": "Changelog tarihleri, commit çevirileri ve CI/deployment durumları düzeltildi.",
   "Complete translation coverage for history timeline": "Geçmiş zaman çizelgesinin çeviri kapsamı tamamlandı.",
+  "Refresh brand palette and simplify Vice City theme": "SELAMCHAT renk paleti yenilendi ve Vice City teması sadeleştirildi.",
+  "Merge remote README update with brand refresh": "Dokümantasyon güncellemesi ile marka yenilemesi birleştirildi.",
 };
 
 function translate(subject: string) {
@@ -115,39 +119,41 @@ async function githubJson<T>(path: string): Promise<T> {
 }
 
 function aggregateChecks(runs: GitHubCheckRun[]): VerificationStatus {
-  if (runs.length === 0) return "unknown";
-  if (runs.some(run => ["failure", "cancelled", "timed_out", "action_required", "startup_failure"].includes(run.conclusion ?? ""))) return "failure";
+  if (runs.length === 0) return "not-run";
+  if (runs.some(run => run.conclusion === "timed_out")) return "timed_out";
+  if (runs.some(run => run.conclusion === "cancelled")) return "cancelled";
+  if (runs.some(run => ["failure", "action_required", "startup_failure"].includes(run.conclusion ?? ""))) return "failure";
   if (runs.some(run => run.status !== "completed")) return "pending";
   return runs.every(run => run.conclusion === "success" || run.conclusion === "neutral" || run.conclusion === "skipped") ? "success" : "unknown";
 }
 
 function aggregateDeployment(statuses: GitHubStatus[]): { status: VerificationStatus; context: string | null } {
-  if (statuses.length === 0) return { status: "unknown", context: null };
+  if (statuses.length === 0) return { status: "not-found", context: null };
   const latest = statuses[0];
   const state = latest.state ?? "pending";
   return {
-    status: state === "success" ? "success" : state === "failure" || state === "error" ? "failure" : state === "pending" ? "pending" : "unknown",
+    status: state === "success" ? "success" : state === "failure" || state === "error" ? "failure" : state === "cancelled" || state === "canceled" ? "cancelled" : ["pending", "queued", "in_progress"].includes(state) ? "pending" : "unknown",
     context: latest.context ?? null,
   };
 }
 
-async function getVerification(sha: string, hasWorkflows: boolean): Promise<VerificationResult> {
+async function getVerification(sha: string, workflowAvailability: WorkflowAvailability): Promise<VerificationResult> {
   const saved: VerificationResult | undefined = verificationCache.get(sha);
   if (saved) return saved;
   const statusesPromise = githubJson<{ state?: string; statuses?: GitHubStatus[] }>(`/commits/${sha}/status`);
-  const checksPromise = hasWorkflows ? githubJson<{ check_runs?: GitHubCheckRun[] }>(`/commits/${sha}/check-runs`) : Promise.resolve({ check_runs: [] });
+  const checksPromise = workflowAvailability === true ? githubJson<{ check_runs?: GitHubCheckRun[] }>(`/commits/${sha}/check-runs`) : Promise.resolve({ check_runs: [] });
   const [statusResponse, checks] = await Promise.all([statusesPromise, checksPromise]);
   const result = {
-    ciStatus: aggregateChecks(checks.check_runs ?? []),
+    ciStatus: workflowAvailability === false ? "not-run" : workflowAvailability === "unavailable" ? "unknown" : aggregateChecks(checks.check_runs ?? []),
     deployment: aggregateDeployment(statusResponse.statuses ?? []),
   };
   verificationCache.set(sha, result);
   return result;
 }
 
-async function getVerificationSafely(sha: string, hasWorkflows: boolean): Promise<VerificationResult> {
+async function getVerificationSafely(sha: string, workflowAvailability: WorkflowAvailability): Promise<VerificationResult> {
   try {
-    return await getVerification(sha, hasWorkflows);
+    return await getVerification(sha, workflowAvailability);
   } catch (error) {
     console.error("[history verification]", sha, error);
     return { ciStatus: "unknown", deployment: { status: "unknown", context: null } };
@@ -157,19 +163,19 @@ async function getVerificationSafely(sha: string, hasWorkflows: boolean): Promis
 async function getTimeline(): Promise<HistoryPayload> {
   if (cached && cached.expiresAt > Date.now()) return cached.payload;
   const commits = await githubJson<GitHubCommit[]>("/commits?per_page=100");
-  let hasWorkflows = Boolean(workflowsCache && workflowsCache.expiresAt > Date.now() && workflowsCache.hasWorkflows);
+  let workflowAvailability: WorkflowAvailability = workflowsCache && workflowsCache.expiresAt > Date.now() ? workflowsCache.hasWorkflows : "unavailable";
   if (!workflowsCache || workflowsCache.expiresAt <= Date.now()) {
     try {
       const workflows = await githubJson<{ total_count?: number }>("/actions/workflows");
-      hasWorkflows = Number(workflows.total_count ?? 0) > 0;
-      workflowsCache = { expiresAt: Date.now() + 300_000, hasWorkflows };
+      workflowAvailability = Number(workflows.total_count ?? 0) > 0;
+      workflowsCache = { expiresAt: Date.now() + 300_000, hasWorkflows: workflowAvailability };
     } catch {
-      // No workflow data means CI is unknown; deployment statuses remain usable.
-      workflowsCache = { expiresAt: Date.now() + 60_000, hasWorkflows: false };
+      workflowAvailability = "unavailable";
+      workflowsCache = { expiresAt: Date.now() + 60_000, hasWorkflows: workflowAvailability };
     }
   }
   const chronological = [...commits].reverse();
-  const verified = await Promise.all(chronological.map(commit => getVerificationSafely(commit.sha, hasWorkflows)));
+  const verified = await Promise.all(chronological.map(commit => getVerificationSafely(commit.sha, workflowAvailability)));
   const productionSha = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_COMMIT_SHA ?? null;
   const liveIndex = productionSha ? chronological.findIndex(commit => commit.sha === productionSha) : -1;
   const payload: HistoryPayload = {
@@ -187,6 +193,7 @@ async function getTimeline(): Promise<HistoryPayload> {
         ciStatus: verified[index].ciStatus,
         deploymentStatus: verified[index].deployment.status,
         deploymentContext: verified[index].deployment.context,
+        documentation: subject === "Update README.md",
         live: commit.sha === productionSha,
       };
     }),

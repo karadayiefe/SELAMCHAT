@@ -8,9 +8,10 @@ type CommitRecord = {
   date: string;
   subject: string;
   sha: string;
-  ciStatus: "success" | "failure" | "pending" | "unknown";
-  deploymentStatus: "success" | "failure" | "pending" | "unknown";
+  ciStatus: "success" | "failure" | "cancelled" | "timed_out" | "pending" | "not-run" | "not-found" | "unknown";
+  deploymentStatus: "success" | "failure" | "cancelled" | "timed_out" | "pending" | "not-run" | "not-found" | "unknown";
   deploymentContext: string | null;
+  documentation: boolean;
   live: boolean;
 };
 
@@ -77,7 +78,25 @@ type ChangelogCardsProps = {
 function formatSpecialDate(value: string) {
   const exact = value.includes("T");
   const date = new Date(exact ? value : `${value}T12:00:00+03:00`);
-  return exact ? date.toLocaleString("tr-TR") : `${date.toLocaleDateString("tr-TR")} · saat belirtilmedi`;
+  const options: Intl.DateTimeFormatOptions = { timeZone: "Europe/Istanbul" };
+  return exact ? date.toLocaleString("tr-TR", options) : `${date.toLocaleDateString("tr-TR", options)} · saat belirtilmedi`;
+}
+
+function statusLabel(status: CommitRecord["ciStatus"], kind: "ci" | "deployment") {
+  if (status === "success") return "Başarılı";
+  if (status === "failure") return "Başarısız";
+  if (status === "cancelled") return "İptal edildi";
+  if (status === "timed_out") return "Zaman aşımına uğradı";
+  if (status === "pending") return kind === "ci" ? "Bekliyor / Çalışıyor" : "Devam ediyor";
+  if (status === "not-run") return "Çalıştırılmadı";
+  if (status === "not-found") return "Deployment bulunamadı";
+  return "Bilinmiyor";
+}
+
+function statusIcon(status: CommitRecord["ciStatus"]) {
+  if (status === "success") return <Check size={13} />;
+  if (status === "failure" || status === "cancelled") return <X size={13} />;
+  return <CircleAlert size={13} />;
 }
 
 function SpecialCard({ change, resolvedDate, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: (typeof changes)[number]; resolvedDate?: string } & ChangelogCardsProps) {
@@ -124,9 +143,9 @@ export function TimelinePanel({ onSelectViceCity, viceMusicPlaying, onToggleVice
     {!history && <div className="timeline-loading">GitHub geçmişi getiriliyor…</div>}
     {history && !history.ok && <div className="timeline-loading timeline-error">Geçmiş şu an getirilemedi. Tekrar deneyebilirsin.</div>}
     {records.map(record => record.kind === "special" ? <SpecialCard key={record.change.id} change={record.change} resolvedDate={record.resolvedDate} onSelectViceCity={onSelectViceCity} viceMusicPlaying={viceMusicPlaying} onToggleViceMusic={onToggleViceMusic} /> : <article key={record.sha} className={`timeline-commit${record.live ? " timeline-commit--live" : ""}`}>
-      <div className="timeline-commit-top"><span className="timeline-number">#{record.number}</span><span className="timeline-relative">{formatRelative(record.date)}</span>{record.live && <span className="live-badge"><Radio size={11} /> CANLI</span>}</div>
+      <div className="timeline-commit-top"><span className="timeline-number">#{record.number}</span>{record.documentation && <span className="timeline-doc-badge">DOKÜMANTASYON</span>}<span className="timeline-relative">{formatRelative(record.date)}</span>{record.live && <span className="live-badge"><Radio size={11} /> CANLI</span>}</div>
       <p>{record.message}</p>
-      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR")}</span><span className={`build-status build-status--${record.ciStatus}`}>{record.ciStatus === "success" ? <Check size={13} /> : record.ciStatus === "failure" ? <X size={13} /> : <CircleAlert size={13} />}CI: {record.ciStatus === "success" ? "Başarılı" : record.ciStatus === "failure" ? "Başarısız" : record.ciStatus === "pending" ? "Bekliyor" : "Bilinmiyor"}</span><span className={`build-status build-status--${record.deploymentStatus}`}>{record.deploymentStatus === "success" ? <Check size={13} /> : record.deploymentStatus === "failure" ? <X size={13} /> : <CircleAlert size={13} />}Deploy: {record.deploymentStatus === "success" ? "Başarılı" : record.deploymentStatus === "failure" ? "Başarısız" : record.deploymentStatus === "pending" ? "Bekliyor" : "Bilinmiyor"}</span></div>
+      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}</span><span className={`build-status build-status--${record.ciStatus}`}>{statusIcon(record.ciStatus)}CI: {statusLabel(record.ciStatus, "ci")}</span><span className={`build-status build-status--${record.deploymentStatus}`}>{statusIcon(record.deploymentStatus)}Deploy: {statusLabel(record.deploymentStatus, "deployment")}</span></div>
     </article>)}
   </div>;
 }
