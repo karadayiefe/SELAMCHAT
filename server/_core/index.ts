@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerChatRoutes } from "../routes/chat";
+import { registerHistoryRoutes } from "../routes/history";
 
 async function startServer() {
   const app = express();
@@ -21,6 +22,7 @@ async function startServer() {
   });
   registerOAuthRoutes(app);
   registerChatRoutes(app);
+  registerHistoryRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

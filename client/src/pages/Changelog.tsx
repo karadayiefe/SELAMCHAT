@@ -1,54 +1,59 @@
-import { CalendarDays, Check, Pause, Play } from "lucide-react";
+import { CalendarDays, Check, CircleAlert, Pause, Play, Radio, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+type CommitRecord = {
+  kind: "commit";
+  number: number;
+  message: string;
+  date: string;
+  sha: string;
+  status: "success" | "pending";
+  live: boolean;
+};
+
+type HistoryResponse = { ok: boolean; commits?: CommitRecord[]; error?: string };
 
 export const changes = [
   {
-    eyebrow: "CHANGELOG · 17 KASIM 2026",
+    id: "origin",
+    date: "2026-11-17T08:00:00+03:00",
+    eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
     title: "HER ŞEYİN BAŞLANGICI",
-    description:
-      "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
+    description: "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
     sectionLabel: "İlk gün:",
-    details: [
-      "Sitenin temel hâli oluşturuldu.",
-      "İlk eşleşmeler denendi.",
-      "Üst üste 3 hata aldık. Evet, daha ilk günden sıçtık.",
-    ],
+    details: ["Sitenin temel hâli oluşturuldu.", "İlk eşleşmeler denendi.", "Üst üste 3 hata aldık. Evet, daha ilk günden sıçtık."],
   },
   {
-    eyebrow: "CHANGELOG · 17 KASIM 2026",
+    id: "improvements",
+    date: "2026-11-17T18:00:00+03:00",
+    eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
     title: "İLK ADIM VE GELİŞTİRMELER",
-    description:
-      "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
+    description: "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
     sectionLabel: "Bu gün gelenler:",
-    details: [
-      "56+ farklı hayvan eklendi.",
-      "Sohbet bitince mesajlar temizleniyor.",
-      "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor.",
-    ],
+    details: ["56+ farklı hayvan eklendi.", "Sohbet bitince mesajlar temizleniyor.", "Karşı taraf ayrıldığında oda güvenli şekilde kapanıyor."],
   },
   {
-    eyebrow: "CHANGELOG · 18 KASIM 2026",
+    id: "vice-city",
+    date: "2026-11-18T12:00:00+03:00",
+    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
-    description:
-      "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
-    details: [
-      "🌴 GTA 6 özel teması eklendi.",
-      "🎵 GTA 6 temasına özel müzik eklendi.",
-    ],
+    description: "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
+    details: ["GTA 6 özel teması eklendi.", "Blood In Your Eyes tema müziği eklendi."],
     viceCity: true,
   },
   {
-    eyebrow: "GİZLİ EASTER EGG",
-    title: "🐈 BİR YERLERE KEDİ SAKLADIK!",
+    id: "cat",
+    date: "2026-11-18T18:00:00+03:00",
+    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
+    title: "BİR YERLERE KEDİ SAKLADIK",
     description: "Bir kedi teması Easter egg'i saklandı.",
-    details: [
-      "Temayı kendiniz bulun.",
-      "Tıklayın, etrafı keşfedin; belki gizli kedi temasını ilk siz bulursunuz.",
-    ],
+    details: ["Temayı kendiniz bulun.", "Tıklayın, etrafı keşfedin; belki gizli kedi temasını ilk siz bulursunuz."],
     cat: true,
   },
   {
-    eyebrow: "MUKALCHAT V1.0 BETA",
-    date: "18 KASIM 2026 · 23:00",
+    id: "beta",
+    date: "2026-11-18T23:00:00+03:00",
+    eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026 · 23:00",
     title: "MUKALCHAT V1.0 BETA",
     description: "ŞU AN AÇILDI",
     details: ["18 Kasım 2026, saat 23:00 itibarıyla MUKALCHAT artık sizinle."],
@@ -56,60 +61,60 @@ export const changes = [
   },
 ];
 
-interface ChangelogCardsProps {
+type ChangelogCardsProps = {
   onSelectViceCity?: () => void;
   viceMusicPlaying?: boolean;
   onToggleViceMusic?: () => void;
+};
+
+function SpecialCard({ change, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: (typeof changes)[number] } & ChangelogCardsProps) {
+  return (
+    <article className={`changelog-entry timeline-special${change.finale ? " changelog-entry--finale" : ""}${change.viceCity ? " changelog-entry--vice-city" : ""}${change.cat ? " changelog-entry--cat" : ""}`}>
+      <div className="changelog-entry-meta">
+        <span className="changelog-version">{change.eyebrow}</span>
+        <span className="changelog-date"><CalendarDays size={14} aria-hidden="true" />{new Date(change.date).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+      </div>
+      <h2>{change.title}</h2>
+      <p className="changelog-entry-description">{change.description}</p>
+      {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
+      <ul>{change.details.map(detail => <li key={detail}><Check size={15} aria-hidden="true" /><span>{detail}</span></li>)}</ul>
+      {change.viceCity && onSelectViceCity && <div className="timeline-vice-actions">
+        <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>GTA 6 temasını seç</button>
+        {onToggleViceMusic && <button type="button" className="changelog-vice-button changelog-music-button changelog-icon-button" onClick={onToggleViceMusic} aria-pressed={viceMusicPlaying} aria-label={viceMusicPlaying ? "Blood In Your Eyes müziğini durdur" : "Blood In Your Eyes müziğini oynat"} title={viceMusicPlaying ? "Müziği durdur" : "Müziği oynat"}>{viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />}</button>}
+      </div>}
+    </article>
+  );
 }
 
-export function ChangelogCards({ onSelectViceCity, viceMusicPlaying = false, onToggleViceMusic }: ChangelogCardsProps) {
-  return (
-    <div className="changelog-list">
-      {changes.map(change => (
-        <article
-          className={`changelog-entry${change.finale ? " changelog-entry--finale" : ""}${change.viceCity ? " changelog-entry--vice-city" : ""}${change.cat ? " changelog-entry--cat" : ""}`}
-          key={`${change.eyebrow}-${change.title}`}
-        >
-          <div className="changelog-entry-meta">
-            <span className="changelog-version">{change.eyebrow}</span>
-            {change.date && (
-              <span className="changelog-date">
-                <CalendarDays size={14} aria-hidden="true" />
-                {change.date}
-              </span>
-            )}
-          </div>
-          <h2>{change.title}</h2>
-          <p className="changelog-entry-description">{change.description}</p>
-          {change.sectionLabel && <p className="changelog-section-label">{change.sectionLabel}</p>}
-          <ul>
-            {change.details.map(detail => (
-              <li key={detail}>
-                <Check size={15} aria-hidden="true" />
-                <span>{detail}</span>
-              </li>
-            ))}
-          </ul>
-          {change.viceCity && onSelectViceCity && (
-            <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>
-              <Play size={15} fill="currentColor" aria-hidden="true" />
-              GTA 6 temasını seç
-            </button>
-          )}
-          {change.viceCity && onToggleViceMusic && (
-            <button
-              type="button"
-              className="changelog-vice-button changelog-music-button"
-              onClick={onToggleViceMusic}
-              aria-pressed={viceMusicPlaying}
-              aria-label={viceMusicPlaying ? "Tove Lo - Blood In Your Eyes müziğini durdur" : "Tove Lo - Blood In Your Eyes çal"}
-            >
-              {viceMusicPlaying ? <Pause size={15} aria-hidden="true" /> : <Play size={15} fill="currentColor" aria-hidden="true" />}
-              {viceMusicPlaying ? "Tove Lo - Blood In Your Eyes durdur" : "Tove Lo - Blood In Your Eyes çal"}
-            </button>
-          )}
-        </article>
-      ))}
-    </div>
-  );
+function formatRelative(date: string) {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 1000));
+  if (seconds < 60) return `${seconds} saniye önce`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} dakika önce`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} saat önce`;
+  return `${Math.floor(hours / 24)} gün önce`;
+}
+
+export function TimelinePanel({ onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: ChangelogCardsProps) {
+  const [history, setHistory] = useState<HistoryResponse | null>(null);
+  useEffect(() => { void fetch("/api/history", { cache: "no-store" }).then(response => response.json()).then(setHistory).catch(() => setHistory({ ok: false, error: "history_unavailable" })); }, []);
+  const records = useMemo(() => {
+    const commits = history?.commits ?? [];
+    return [...commits.map(commit => ({ ...commit, sortDate: new Date(commit.date).getTime() })), ...changes.map(change => ({ kind: "special" as const, change, sortDate: new Date(change.date).getTime() }))].sort((a, b) => b.sortDate - a.sortDate);
+  }, [history]);
+
+  return <div className="timeline-list">
+    {!history && <div className="timeline-loading">GitHub geçmişi getiriliyor…</div>}
+    {history && !history.ok && <div className="timeline-loading timeline-error">Geçmiş şu an getirilemedi. Tekrar deneyebilirsin.</div>}
+    {records.map(record => record.kind === "special" ? <SpecialCard key={record.change.id} change={record.change} onSelectViceCity={onSelectViceCity} viceMusicPlaying={viceMusicPlaying} onToggleViceMusic={onToggleViceMusic} /> : <article key={record.sha} className={`timeline-commit${record.live ? " timeline-commit--live" : ""}`}>
+      <div className="timeline-commit-top"><span className="timeline-number">#{record.number}</span><span className="timeline-relative">{formatRelative(record.date)}</span>{record.live && <span className="live-badge"><Radio size={11} /> CANLI</span>}</div>
+      <p>{record.message}</p>
+      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR")}</span><span className={`build-status build-status--${record.status}`}>{record.status === "success" ? <Check size={13} /> : record.status === "pending" ? <CircleAlert size={13} /> : <X size={13} />}{record.status === "success" ? "Başarılı" : "Bekliyor"}</span></div>
+    </article>)}
+  </div>;
+}
+
+export function ChangelogCards(props: ChangelogCardsProps) {
+  return <div className="changelog-list">{changes.map(change => <SpecialCard key={change.id} change={change} {...props} />)}</div>;
 }

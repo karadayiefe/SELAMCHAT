@@ -235,16 +235,16 @@ async function findByToken(d: Db, token: string): Promise<ParticipantRow | null>
 /* -------------------------------------------------------------------------- */
 
 /** All room participants are locked by ascending id before locking the room. */
-async function lockRoomParticipants(tx: Tx, roomId: number, includeParticipantId?: number) {
+async function lockRoomParticipants(tx: Tx, roomId: number, includeParticipantId?: number, lock = true) {
   const roomFilter = includeParticipantId
     ? or(eq(participants.roomId, roomId), eq(participants.id, includeParticipantId))
     : eq(participants.roomId, roomId);
-  return tx
+  const query = tx
     .select()
     .from(participants)
     .where(roomFilter)
-    .orderBy(asc(participants.id))
-    .for("update");
+    .orderBy(asc(participants.id));
+  return lock ? query.for("update") : query;
 }
 
 /**
@@ -546,7 +546,7 @@ export async function sendMessage(
     if (duplicate.length > 0) return "sent" as const;
     if (!allowMessage(token)) return "too_fast" as const;
 
-    await tx.insert(messages).values({ roomId, senderId: me.id, clientId, body });
+    const insertedMessage = await tx.insert(messages).values({ roomId, senderId: me.id, clientId, body });
     await tx
       .update(rooms)
       .set({ lastActivity: sql`NOW()` })
@@ -557,13 +557,16 @@ export async function sendMessage(
       .where(eq(participants.id, me.id));
 
     // Keep a single room bounded; older rows of the live room are dropped too.
-    await tx.execute(
-      sql`DELETE FROM messages WHERE roomId = ${roomId} AND id NOT IN (
-        SELECT id FROM (
-          SELECT id FROM messages WHERE roomId = ${roomId} ORDER BY id DESC LIMIT ${MAX_MESSAGES_PER_ROOM}
-        ) AS keep_rows
-      )`
-    );
+    // Prune periodically instead of making every message wait for a nested delete.
+    if (Number(insertedMessage[0].insertId) % 50 === 0) {
+      await tx.execute(
+        sql`DELETE FROM messages WHERE roomId = ${roomId} AND id NOT IN (
+          SELECT id FROM (
+            SELECT id FROM messages WHERE roomId = ${roomId} ORDER BY id DESC LIMIT ${MAX_MESSAGES_PER_ROOM}
+          ) AS keep_rows
+        )`
+      );
+    }
     return "sent" as const;
   });
 
@@ -670,7 +673,10 @@ export async function sweep(force = false): Promise<void> {
 /* State                                                                      */
 /* -------------------------------------------------------------------------- */
 
+let countersCache: { expiresAt: number; value: { online: number; activeChats: number } } | null = null;
+
 async function readCounters(d: Db) {
+  if (countersCache && countersCache.expiresAt > Date.now()) return countersCache.value;
   const [onlineRow] = await d
     .select({ total: sql<number>`COUNT(*)` })
     .from(participants)
@@ -695,10 +701,12 @@ async function readCounters(d: Db) {
       )
     );
 
-  return {
+  const value = {
     online: Number(onlineRow?.total ?? 0),
     activeChats: Number(chatRow?.total ?? 0),
   };
+  countersCache = { expiresAt: Date.now() + 750, value };
+  return value;
 }
 
 export async function getState(token: string): Promise<ChatState | null> {
@@ -726,7 +734,7 @@ export async function getState(token: string): Promise<ChatState | null> {
   if (me.roomId) {
     const roomId = me.roomId;
     const snapshot = await d.transaction(async tx => {
-      const lockedMembers = await lockRoomParticipants(tx, roomId, me!.id);
+      const lockedMembers = await lockRoomParticipants(tx, roomId, me!.id, false);
       const current = lockedMembers.find(row => row.id === me!.id);
       if (!current || current.roomId !== roomId || current.status !== "chatting") {
         if (current?.status === "chatting" && current.roomId) {
@@ -755,7 +763,6 @@ export async function getState(token: string): Promise<ChatState | null> {
         .select()
         .from(rooms)
         .where(eq(rooms.id, roomId))
-        .for("update")
         .limit(1);
 
       if (!room || room.status !== "active") {
