@@ -23,6 +23,12 @@
 
 **A new conversation is just one hello away.**
 
+<br/>
+
+<img src="./.github/assets/selamchat-preview.png" alt="SELAMCHAT Application Preview" width="100%"/>
+
+<sub>SELAMCHAT — Anonymous conversations, made simple.</sub>
+
 </div>
 
 ---
