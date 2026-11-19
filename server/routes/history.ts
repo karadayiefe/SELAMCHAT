@@ -98,6 +98,8 @@ const translations: Record<string, string> = {
   "Complete translation coverage for history timeline": "Geçmiş zaman çizelgesinin çeviri kapsamı tamamlandı.",
   "Refresh brand palette and simplify Vice City theme": "SELAMCHAT renk paleti yenilendi ve Vice City teması sadeleştirildi.",
   "Merge remote README update with brand refresh": "Dokümantasyon güncellemesi ile marka yenilemesi birleştirildi.",
+  "Restore Vice City theme and audit history statuses": "Vice City teması geri getirildi ve geçmiş durumları denetlendi.",
+  "Document latest history audit": "Son geçmiş ve deployment denetimi kayda geçirildi.",
 };
 
 function translate(subject: string) {
