@@ -1088,6 +1088,7 @@
   .build-status--success { color: #6fe39a; }
   .build-status--pending { color: #f2c56d; }
   .build-status--failure { color: #ff7180; }
+  .build-status--unknown { color: var(--text-dim); }
 
   .timeline-special { margin: 0.25rem 0; }
   .timeline-vice-actions { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.1rem; }

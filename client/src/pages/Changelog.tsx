@@ -6,8 +6,11 @@ type CommitRecord = {
   number: number;
   message: string;
   date: string;
+  subject: string;
   sha: string;
-  status: "success" | "pending";
+  ciStatus: "success" | "failure" | "pending" | "unknown";
+  deploymentStatus: "success" | "failure" | "pending" | "unknown";
+  deploymentContext: string | null;
   live: boolean;
 };
 
@@ -16,16 +19,18 @@ type HistoryResponse = { ok: boolean; commits?: CommitRecord[]; error?: string }
 export const changes = [
   {
     id: "origin",
-    date: "2026-11-17T08:00:00+03:00",
+    date: "2026-11-17",
+    anchorSubject: "Initial MUKALCHAT",
     eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
     title: "HER ŞEYİN BAŞLANGICI",
-    description: "SELAMCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
+    description: "MUKALCHAT doğdu. Okuldaki öğrencilerin üyelik veya profil oluşturmadan, yeni insanlarla canlı ve anonim şekilde konuşabilmesi fikri hoşumuza gitti. Projenin ilk adı MUKCHAT idi.",
     sectionLabel: "İlk gün:",
     details: ["Sitenin temel hâli oluşturuldu.", "İlk eşleşmeler denendi.", "Üst üste 3 hata aldık. Evet, daha ilk günden sıçtık."],
   },
   {
     id: "improvements",
-    date: "2026-11-17T18:00:00+03:00",
+    date: "2026-11-17",
+    anchorSubject: "Improve chat responsiveness and UI polish",
     eyebrow: "ÖZEL CHANGELOG · 17 KASIM 2026",
     title: "İLK ADIM VE GELİŞTİRMELER",
     description: "Sohbet deneyiminin temelini güçlendirdik. Eşleşme, heartbeat ve sohbet temizleme sistemlerini daha güvenilir hâle getirdik.",
@@ -34,16 +39,18 @@ export const changes = [
   },
   {
     id: "vice-city",
-    date: "2026-11-18T12:00:00+03:00",
+    date: "2026-11-18",
+    anchorSubject: "Redesign Vice City theme",
     eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
-    description: "GTA 6 çıkışına özel tema SELAMCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
+    description: "GTA 6 çıkışına özel tema MUKALCHAT'te. GTA 6 temasını seçin ve Vice City atmosferini keşfedin.",
     details: ["GTA 6 özel teması eklendi.", "Blood In Your Eyes tema müziği eklendi."],
     viceCity: true,
   },
   {
     id: "cat",
-    date: "2026-11-18T18:00:00+03:00",
+    date: "2026-11-18",
+    anchorSubject: "Add cat easter egg theme",
     eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026",
     title: "BİR YERLERE KEDİ SAKLADIK",
     description: "Bir kedi teması Easter egg'i saklandı.",
@@ -54,9 +61,9 @@ export const changes = [
     id: "beta",
     date: "2026-11-18T23:00:00+03:00",
     eyebrow: "ÖZEL CHANGELOG · 18 KASIM 2026 · 23:00",
-    title: "SELAMCHAT V1.0 BETA",
+    title: "MUKALCHAT V1.0 BETA",
     description: "ŞU AN AÇILDI",
-    details: ["18 Kasım 2026, saat 23:00 itibarıyla SELAMCHAT artık sizinle."],
+    details: ["18 Kasım 2026, saat 23:00 itibarıyla MUKALCHAT artık sizinle."],
     finale: true,
   },
 ];
@@ -67,12 +74,18 @@ type ChangelogCardsProps = {
   onToggleViceMusic?: () => void;
 };
 
-function SpecialCard({ change, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: (typeof changes)[number] } & ChangelogCardsProps) {
+function formatSpecialDate(value: string) {
+  const exact = value.includes("T");
+  const date = new Date(exact ? value : `${value}T12:00:00+03:00`);
+  return exact ? date.toLocaleString("tr-TR") : `${date.toLocaleDateString("tr-TR")} · saat belirtilmedi`;
+}
+
+function SpecialCard({ change, resolvedDate, onSelectViceCity, viceMusicPlaying, onToggleViceMusic }: { change: (typeof changes)[number]; resolvedDate?: string } & ChangelogCardsProps) {
   return (
     <article className={`changelog-entry timeline-special${change.finale ? " changelog-entry--finale" : ""}${change.viceCity ? " changelog-entry--vice-city" : ""}${change.cat ? " changelog-entry--cat" : ""}`}>
       <div className="changelog-entry-meta">
         <span className="changelog-version">{change.eyebrow}</span>
-        <span className="changelog-date"><CalendarDays size={14} aria-hidden="true" />{new Date(change.date).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+        <span className="changelog-date"><CalendarDays size={14} aria-hidden="true" />{formatSpecialDate(resolvedDate ?? change.date)}</span>
       </div>
       <h2>{change.title}</h2>
       <p className="changelog-entry-description">{change.description}</p>
@@ -101,16 +114,19 @@ export function TimelinePanel({ onSelectViceCity, viceMusicPlaying, onToggleVice
   useEffect(() => { void fetch("/api/history", { cache: "no-store" }).then(response => response.json()).then(setHistory).catch(() => setHistory({ ok: false, error: "history_unavailable" })); }, []);
   const records = useMemo(() => {
     const commits = history?.commits ?? [];
-    return [...commits.map(commit => ({ ...commit, sortDate: new Date(commit.date).getTime() })), ...changes.map(change => ({ kind: "special" as const, change, sortDate: new Date(change.date).getTime() }))].sort((a, b) => b.sortDate - a.sortDate);
+    return [...commits.map(commit => ({ ...commit, sortDate: new Date(commit.date).getTime() })), ...changes.map(change => {
+      const resolvedDate = change.anchorSubject ? commits.find(commit => commit.subject === change.anchorSubject)?.date ?? change.date : change.date;
+      return { kind: "special" as const, change, resolvedDate, sortDate: new Date(resolvedDate).getTime() };
+    })].sort((a, b) => b.sortDate - a.sortDate);
   }, [history]);
 
   return <div className="timeline-list">
     {!history && <div className="timeline-loading">GitHub geçmişi getiriliyor…</div>}
     {history && !history.ok && <div className="timeline-loading timeline-error">Geçmiş şu an getirilemedi. Tekrar deneyebilirsin.</div>}
-    {records.map(record => record.kind === "special" ? <SpecialCard key={record.change.id} change={record.change} onSelectViceCity={onSelectViceCity} viceMusicPlaying={viceMusicPlaying} onToggleViceMusic={onToggleViceMusic} /> : <article key={record.sha} className={`timeline-commit${record.live ? " timeline-commit--live" : ""}`}>
+    {records.map(record => record.kind === "special" ? <SpecialCard key={record.change.id} change={record.change} resolvedDate={record.resolvedDate} onSelectViceCity={onSelectViceCity} viceMusicPlaying={viceMusicPlaying} onToggleViceMusic={onToggleViceMusic} /> : <article key={record.sha} className={`timeline-commit${record.live ? " timeline-commit--live" : ""}`}>
       <div className="timeline-commit-top"><span className="timeline-number">#{record.number}</span><span className="timeline-relative">{formatRelative(record.date)}</span>{record.live && <span className="live-badge"><Radio size={11} /> CANLI</span>}</div>
       <p>{record.message}</p>
-      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR")}</span><span className={`build-status build-status--${record.status}`}>{record.status === "success" ? <Check size={13} /> : record.status === "pending" ? <CircleAlert size={13} /> : <X size={13} />}{record.status === "success" ? "Başarılı" : "Bekliyor"}</span></div>
+      <div className="timeline-commit-meta"><span>{new Date(record.date).toLocaleString("tr-TR")}</span><span className={`build-status build-status--${record.ciStatus}`}>{record.ciStatus === "success" ? <Check size={13} /> : record.ciStatus === "failure" ? <X size={13} /> : <CircleAlert size={13} />}CI: {record.ciStatus === "success" ? "Başarılı" : record.ciStatus === "failure" ? "Başarısız" : record.ciStatus === "pending" ? "Bekliyor" : "Bilinmiyor"}</span><span className={`build-status build-status--${record.deploymentStatus}`}>{record.deploymentStatus === "success" ? <Check size={13} /> : record.deploymentStatus === "failure" ? <X size={13} /> : <CircleAlert size={13} />}Deploy: {record.deploymentStatus === "success" ? "Başarılı" : record.deploymentStatus === "failure" ? "Başarısız" : record.deploymentStatus === "pending" ? "Bekliyor" : "Bilinmiyor"}</span></div>
     </article>)}
   </div>;
 }
