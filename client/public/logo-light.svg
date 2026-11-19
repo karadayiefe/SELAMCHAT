@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SELAMCHAT açık tema logosu">
+  <defs><linearGradient id="surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#dce2f0"/><stop offset="1" stop-color="#b8d0ee"/></linearGradient><linearGradient id="bubble" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#c4d4ed"/></linearGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#surface)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#ffffff" stroke-opacity=".72" stroke-width="2"/>
+  <path d="M120 184a64 64 0 0 1 64-64h144a64 64 0 0 1 64 64v88a64 64 0 0 1-64 64h-64l-72 64v-64h-8a64 64 0 0 1-64-64Z" fill="url(#bubble)"/>
+  <circle cx="208" cy="228" r="21" fill="#142035"/><circle cx="264" cy="228" r="21" fill="#142035"/><circle cx="320" cy="228" r="21" fill="#142035"/>
+</svg>

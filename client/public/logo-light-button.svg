@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Açık tema">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#b8d0ee"/></linearGradient></defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/><path d="M13 23a10 10 0 0 1 10-10h18a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10H31l-10 9v-9h-1A7 7 0 0 1 13 36Z" fill="#ffffff"/><circle cx="25" cy="28" r="3" fill="#142035"/><circle cx="32" cy="28" r="3" fill="#142035"/><circle cx="39" cy="28" r="3" fill="#142035"/>
+</svg>

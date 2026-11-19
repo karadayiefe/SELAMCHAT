@@ -406,8 +406,12 @@
     flex: none;
     border: 1px solid var(--line-strong);
     border-radius: 0.75rem;
+    overflow: hidden;
+    padding: 0;
     color: white;
   }
+
+  .theme-swatch img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
   .theme-swatch--dark { background: linear-gradient(145deg, #101827, #b8d0ee); }
   .theme-swatch--light { background: linear-gradient(145deg, #f3f5fa, #5973d9); }
@@ -440,10 +444,25 @@
     width: 1.9rem;
     height: 1.9rem;
     border-radius: 0.6rem;
-    background: var(--lime);
-    color: #0a0b0d;
+    overflow: hidden;
+    background: transparent;
     box-shadow: 0 0 22px var(--accent-glow);
   }
+
+  .wordmark-logo {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wordmark-logo--dark { display: block; }
+  :root[data-theme="light"] .wordmark-logo--dark,
+  :root[data-theme="vice-city"] .wordmark-logo--dark,
+  :root[data-theme="cat"] .wordmark-logo--dark { display: none; }
+  :root[data-theme="light"] .wordmark-logo--light,
+  :root[data-theme="cat"] .wordmark-logo--light { display: block; }
+  :root[data-theme="vice-city"] .wordmark-logo--vice-city { display: block; }
 
   .wordmark-accent {
     color: var(--lime);

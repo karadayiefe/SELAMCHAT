@@ -5,12 +5,9 @@ export function Wordmark() {
     <div>
       <div className="wordmark">
         <span className="wordmark-mark" aria-hidden="true">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M3.5 7.5A4.5 4.5 0 0 1 8 3h8a4.5 4.5 0 0 1 4.5 4.5v5A4.5 4.5 0 0 1 16 17h-4l-4.5 4v-4.1A4.5 4.5 0 0 1 3.5 12.5z"
-              fill="currentColor"
-            />
-          </svg>
+          <img className="wordmark-logo wordmark-logo--dark" src="/logo-dark.svg" alt="" />
+          <img className="wordmark-logo wordmark-logo--light" src="/logo-light.svg" alt="" />
+          <img className="wordmark-logo wordmark-logo--vice-city" src="/logo-vice-city.svg" alt="" />
         </span>
         <span aria-label="SELAMCHAT">
           SELAM<span className="wordmark-accent">CHAT</span>

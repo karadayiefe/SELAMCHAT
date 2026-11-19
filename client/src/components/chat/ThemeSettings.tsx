@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Moon, Pause, Play, Settings2, Sparkles, Sun, Volume2, VolumeX } from "lucide-react";
+import { Check, Pause, Play, Settings2, Volume2, VolumeX } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import {
   Dialog,
@@ -9,10 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const options: { id: Theme; label: string; description: string; icon: typeof Moon }[] = [
-  { id: "dark", label: "Koyu", description: "", icon: Moon },
-  { id: "light", label: "Açık", description: "", icon: Sun },
-  { id: "vice-city", label: "GTA 6 · Vice City", description: "GTA 6 çıkışına özel", icon: Sparkles },
+const options: { id: Theme; label: string; description: string; logo: string }[] = [
+  { id: "dark", label: "Koyu", description: "", logo: "/logo-dark-button.svg" },
+  { id: "light", label: "Açık", description: "", logo: "/logo-light-button.svg" },
+  { id: "vice-city", label: "GTA 6 · Vice City", description: "GTA 6 çıkışına özel", logo: "/logo-vice-city-button.svg" },
 ];
 
 export function ThemeSettings() {
@@ -72,7 +72,7 @@ export function ThemeSettings() {
             <DialogDescription>Görünüm temasını seç.</DialogDescription>
           </DialogHeader>
           <div className="theme-options" role="group" aria-label="Tema seçimi">
-            {options.map(({ id, label, description, icon: Icon }) => (
+            {options.map(({ id, label, description, logo }) => (
               <button
                 key={id}
                 type="button"
@@ -81,7 +81,7 @@ export function ThemeSettings() {
                 aria-pressed={theme === id}
               >
                 <span className={`theme-swatch theme-swatch--${id}`} aria-hidden="true">
-                  <Icon size={19} />
+                  <img src={logo} alt="" />
                 </span>
                 <span className="theme-option-copy">
                   <span className="theme-option-title">{label}</span>
