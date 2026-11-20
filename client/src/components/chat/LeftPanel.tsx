@@ -7,11 +7,13 @@ export function LeftPanel({
   busy,
   onFindNew,
   message,
+  showAwayStatus = false,
 }: {
   me: Identity;
   busy: boolean;
   onFindNew: () => void;
   message: string;
+  showAwayStatus?: boolean;
 }) {
   return (
     <section className="panel-body fade-up">
@@ -31,7 +33,8 @@ export function LeftPanel({
             {message}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--text-dim)]">
-            Sohbette Değil · Sohbet geçmişi silindi.
+            {showAwayStatus && <>Sohbette Değil · </>}
+            Sohbet geçmişi silindi.
           </p>
         </div>
       </div>
