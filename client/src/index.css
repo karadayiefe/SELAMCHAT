@@ -800,6 +800,7 @@
   .chat-scroll {
     flex: 1;
     overflow-y: auto;
+    touch-action: pan-y;
     overscroll-behavior: contain;
     padding: 1rem 0.9rem;
     display: flex;
@@ -980,6 +981,7 @@
     .chat-scroll {
       min-height: 0;
       overscroll-behavior-y: contain;
+      touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
