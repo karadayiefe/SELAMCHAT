@@ -258,6 +258,7 @@
     border-radius: 42% 58% 52% 48%;
     overflow: hidden;
     opacity: 0.72;
+    scale: 1.5;
     box-shadow: 0 10px 22px rgba(74, 24, 18, 0.22);
     will-change: transform;
     animation: cat-fall 11s linear infinite;
@@ -296,6 +297,14 @@
   .cat-rain-cat:nth-child(30) { left: 77%; width: 4rem; animation-duration: 17.2s; animation-delay: -6.2s; transform: rotate(-15deg); }
   .cat-rain-cat:nth-child(31) { left: 88%; width: 3.6rem; animation-duration: 14.8s; animation-delay: -13.4s; }
   .cat-rain-cat:nth-child(32) { left: 98%; width: 2.9rem; animation-duration: 11.8s; animation-delay: -2.2s; transform: rotate(17deg); }
+  .cat-rain-cat:nth-child(33) { left: 6%; width: 3.8rem; animation-duration: 16.8s; animation-delay: -11.1s; }
+  .cat-rain-cat:nth-child(34) { left: 21%; width: 3rem; animation-duration: 12.6s; animation-delay: -3.1s; transform: rotate(-12deg); }
+  .cat-rain-cat:nth-child(35) { left: 39%; width: 4.4rem; animation-duration: 18.2s; animation-delay: -15.2s; }
+  .cat-rain-cat:nth-child(36) { left: 55%; width: 3.2rem; animation-duration: 13.8s; animation-delay: -7.1s; transform: rotate(15deg); }
+  .cat-rain-cat:nth-child(37) { left: 69%; width: 4.1rem; animation-duration: 15.6s; animation-delay: -5.2s; }
+  .cat-rain-cat:nth-child(38) { left: 81%; width: 2.8rem; animation-duration: 11.6s; animation-delay: -12.1s; transform: rotate(-16deg); }
+  .cat-rain-cat:nth-child(39) { left: 93%; width: 3.9rem; animation-duration: 17.8s; animation-delay: -9.2s; }
+  .cat-rain-cat:nth-child(40) { left: 14%; width: 3.5rem; animation-duration: 14.6s; animation-delay: -1.2s; transform: rotate(12deg); }
 
   .page-shell > header, .page-shell > main, .page-shell > footer { position: relative; z-index: 1; }
 
@@ -507,6 +516,7 @@
   :root[data-theme="cat"] .wordmark-logo--dark { display: none; }
   :root[data-theme="light"] .wordmark-logo--light,
   :root[data-theme="cat"] .wordmark-logo--light { display: block; }
+  :root[data-theme="cat"] .wordmark-logo--light { display: none; }
   :root[data-theme="vice-city"] .wordmark-logo--vice-city { display: block; }
   :root[data-theme="cat"] .wordmark-logo--cat { display: block; }
 
