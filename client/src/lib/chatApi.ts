@@ -34,7 +34,6 @@ export type ChatState = {
   roomCard: RoomCardData | null;
   me: Identity;
   partner: Identity | null;
-  partnerTyping: boolean;
   messages: ChatMessage[];
   counters: { online: number; activeChats: number };
   serverTime: string;
@@ -78,6 +77,5 @@ export const chatApi = {
   join: (token: string, rotateAnimal = false) => post("join", { token, rotateAnimal }),
   leave: (token: string) => post("leave", { token }),
   message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
-  typing: (token: string) => post("typing", { token }),
   bye: (token: string) => post("bye", { token }),
 };

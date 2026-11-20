@@ -11,7 +11,7 @@
 - Beş saniyede eşleşme yoksa "Şu anda aktif online yok" uyarısı görünür; arama arka planda sürer ve sonraki gerçek kullanıcı geldiğinde eşleşir.
 
 ## 3. Canlı sohbet
-- İki kullanıcının mesajları her iki ekranda da hayvan adı, emoji ve renk ile gösterilir; yazıyor göstergesi bulunur.
+- İki kullanıcının mesajları her iki ekranda da hayvan adı, emoji ve renk ile gösterilir.
 - Sohbet ekranı responsive ve mobilde kullanılabilir.
 - Mesaj içeriği yalnızca aktif oda süresince geçici DB satırlarında bulunabilir; sohbet kapanınca oda mesajları silinir, sohbet geçmişi/arşivi tutulmaz.
 

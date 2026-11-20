@@ -58,25 +58,19 @@ function Bubble({
 }
 
 export function ChatPanel({
-  me,
   partner,
   roomCard,
   messages,
-  partnerTyping,
   busy,
   onSend,
   onLeave,
-  onTyping,
 }: {
-  me: Identity;
   partner: Identity;
   roomCard: RoomCardData | null;
   messages: ChatMessage[];
-  partnerTyping: boolean;
   busy: boolean;
   onSend: (body: string, clientId?: string) => Promise<boolean>;
   onLeave: () => void;
-  onTyping: () => void;
 }) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -94,13 +88,6 @@ export function ChatPanel({
     element.style.height = `${Math.min(element.scrollHeight, 88)}px`;
   }, [text]);
 
-  // Typing is sent only after the user pauses briefly. This avoids a request
-  // for every keystroke and keeps a fast send independent from typing writes.
-  useEffect(() => {
-    if (!text.trim()) return;
-    const timeoutId = window.setTimeout(onTyping, 650);
-    return () => window.clearTimeout(timeoutId);
-  }, [text, onTyping]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -123,7 +110,6 @@ export function ChatPanel({
     inputRef.current?.focus();
   };
 
-  const showTypingStatus = partnerTyping;
 
   return (
     <section className="chat-shell fade-up">
@@ -140,11 +126,6 @@ export function ChatPanel({
             <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
               <span className="live-dot" style={{ width: 5, height: 5 }} aria-hidden="true" />
               <span>çevrimiçi</span>
-              {showTypingStatus && (
-                <span className="chat-typing-status" aria-live="polite">
-                  · yazıyor<span className="chat-typing-dots" aria-hidden="true">...</span>
-                </span>
-              )}
             </span>
           </div>
         </div>
@@ -201,7 +182,6 @@ export function ChatPanel({
         </button>
       </div>
 
-      <span className="sr-only">Sen {me.name} olarak yazıyorsun.</span>
     </section>
   );
 }

@@ -25,7 +25,6 @@ const state = (messages: ChatMessage[], roomId = 7): ChatState => ({
   roomCard: null,
   me: { animalKey: "kedi", name: "Kedi", emoji: "🐱", color: "#B79BFF" },
   partner: { animalKey: "tilki", name: "Tilki", emoji: "🦊", color: "#FF8A4C" },
-  partnerTyping: false,
   messages,
   counters: { online: 2, activeChats: 1 },
   serverTime: "2026-11-18T00:00:00.000Z",

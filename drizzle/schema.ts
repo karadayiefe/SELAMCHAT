@@ -50,7 +50,6 @@ export const participants = mysqlTable(
       .notNull(),
     roomId: int("roomId"),
     queuedAt: timestamp("queuedAt"),
-    typingAt: timestamp("typingAt"),
     isHidden: boolean("isHidden").default(false).notNull(),
     visibilityVersion: bigint("visibilityVersion", { mode: "number" }).default(0).notNull(),
     lastSeen: timestamp("lastSeen").defaultNow().notNull(),

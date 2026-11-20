@@ -145,7 +145,6 @@ export type ChatState = {
   roomCard: { animals: [Identity, Identity]; code: string } | null;
   me: Identity;
   partner: Identity | null;
-  partnerTyping: boolean;
   messages: ChatMessage[];
   counters: { online: number; activeChats: number };
   serverTime: string;
@@ -282,7 +281,7 @@ async function closeRoom(
     // Keep isHidden as a short-lived marker so later state reads distinguish a timeout from a deliberate leave.
     await tx
       .update(participants)
-      .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
+      .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
       .where(eq(participants.roomId, roomId));
     return;
   }
@@ -291,7 +290,7 @@ async function closeRoom(
   if (leavingId > 0) {
     await tx
       .update(participants)
-      .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
+      .set({ status: "idle", roomId: null, queuedAt: null, isHidden: false })
       .where(and(eq(participants.id, leavingId), eq(participants.roomId, roomId)));
     otherSide.push(ne(participants.id, leavingId));
   }
@@ -299,7 +298,7 @@ async function closeRoom(
   // Every still-present peer sees the exit notice; no second exit is required.
   await tx
     .update(participants)
-    .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
+    .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: false })
     .where(and(...otherSide));
 }
 
@@ -346,7 +345,6 @@ async function tryMatch(d: Db, meId: number): Promise<number | null> {
           status: "chatting",
           roomId: createdRoomId,
           queuedAt: null,
-          typingAt: null,
           lastSeen: sql`NOW()`,
         })
         .where(inArray(participants.id, ids));
@@ -398,7 +396,6 @@ export async function joinQueue(token: string, rotateAnimal = false): Promise<vo
         status: "waiting",
         queuedAt: sql`NOW()`,
         roomId: null,
-        typingAt: null,
         lastSeen: sql`NOW()`,
         isHidden: false,
       })
@@ -442,7 +439,7 @@ export async function leaveChat(token: string): Promise<void> {
       if (current.roomId) await closeRoom(tx, current.roomId, current.id);
       await tx
         .update(participants)
-        .set({ status: "idle", roomId: null, queuedAt: null, typingAt: null, isHidden: false })
+        .set({ status: "idle", roomId: null, queuedAt: null, isHidden: false })
         .where(eq(participants.id, current.id));
       return false;
     });
@@ -544,16 +541,12 @@ export async function sendMessage(
     if (Number(roomTouch[0].affectedRows) !== 1) {
       await tx
         .update(participants)
-        .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
+        .set({ status: "partner_left", roomId: null, queuedAt: null })
         .where(and(eq(participants.id, current.id), eq(participants.roomId, roomId)));
       return false;
     }
 
     const insertedMessage = await tx.insert(messages).values({ roomId, senderId: current.id, clientId, body });
-    await tx
-      .update(participants)
-      .set({ typingAt: null, lastSeen: sql`NOW()` })
-      .where(eq(participants.id, current.id));
 
     // Keep a single room bounded; older rows of the live room are dropped too.
     // Prune periodically instead of making every message wait for a nested delete.
@@ -573,15 +566,6 @@ export async function sendMessage(
   return inserted === "sent" ? { ok: true } : { ok: false, error: "chat_closed" };
 }
 
-export async function setTyping(_token: string): Promise<void> {
-  const d = await db();
-  // One conditional write only; the client debounces this signal and never
-  // waits for it, so typing cannot become part of the message request path.
-  await d
-    .update(participants)
-    .set({ typingAt: sql`NOW()` })
-    .where(and(eq(participants.token, _token), eq(participants.status, "chatting"), sql`${participants.roomId} IS NOT NULL`));
-}
 
 /** Visibility is a separate hint; hidden clients get the same 30-second lease. */
 export async function setVisibility(
@@ -725,7 +709,7 @@ export async function getState(token: string): Promise<ChatState | null> {
   me = (await findByToken(d, token)) ?? me;
 
   let status: ChatStatus = me.status === "partner_left" && me.isHidden ? "connection_lost" : me.status;
-  let partner: (Identity & { typing: boolean }) | null = null;
+  let partner: Identity | null = null;
   let rows: ChatMessage[] = [];
   let roomCode: string | null = null;
   let roomCard: ChatState["roomCard"] = null;
@@ -769,7 +753,7 @@ export async function getState(token: string): Promise<ChatState | null> {
         await tx.delete(messages).where(eq(messages.roomId, roomId));
         await tx
           .update(participants)
-          .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
+          .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
           .where(eq(participants.roomId, roomId));
         return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
       }
@@ -793,7 +777,6 @@ export async function getState(token: string): Promise<ChatState | null> {
           ...getTableColumns(participants),
           freshVisible: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})`,
           freshHidden: sql<number>`(participants.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})`,
-          typing: sql<number>`(participants.typingAt IS NOT NULL AND participants.typingAt > ${nowSecondsAgo(6)})`,
         })
         .from(participants)
         .where(and(eq(participants.roomId, roomId), ne(participants.id, current.id)))
@@ -851,7 +834,7 @@ export async function getState(token: string): Promise<ChatState | null> {
 
       return {
         status: "chatting" as const,
-        partner: { ...identityOf(partnerRow), typing: Boolean(Number(partnerRow.typing)) },
+        partner: identityOf(partnerRow),
         roomCode: sharedCode,
         roomCard: {
           animals: [sharedAnimals[0], sharedAnimals[1]] as [Identity, Identity],
@@ -884,7 +867,7 @@ export async function getState(token: string): Promise<ChatState | null> {
     // A chat without an active room is treated as ended, never restored.
     await d
       .update(participants)
-      .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null, isHidden: true })
+      .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
       .where(eq(participants.id, me.id));
     status = "connection_lost";
     me = (await findByToken(d, token)) ?? me;
@@ -913,7 +896,6 @@ export async function getState(token: string): Promise<ChatState | null> {
     roomCard: status === "chatting" ? roomCard : null,
     me: identityOf(me),
     partner: partner ? { animalKey: partner.animalKey, name: partner.name, emoji: partner.emoji, color: partner.color } : null,
-    partnerTyping: partner?.typing ?? false,
     messages: rows,
     counters,
     serverTime: new Date().toISOString(),

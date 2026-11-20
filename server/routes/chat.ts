@@ -6,7 +6,6 @@ import {
   endSession,
   leaveChat,
   sendMessage,
-  setTyping,
   setVisibility,
   startSession,
   sweep,
@@ -130,14 +129,6 @@ export function registerChatRoutes(app: Express) {
     })
   );
 
-  router.post("/typing", (req, res) =>
-    respond(req, res, async () => {
-      const token = readToken(req);
-      if (!token) return { ok: false, error: "no_token" };
-      await setTyping(token);
-      return { ok: true };
-    })
-  );
 
   // Beacon target for tab close / page hide.
   router.post("/bye", (req, res) =>

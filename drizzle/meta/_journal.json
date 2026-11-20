@@ -43,6 +43,13 @@
       "when": 1795010455176,
       "tag": "0005_chat_message_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1795185175438,
+      "tag": "0006_remove_typing_state",
+      "breakpoints": true
     }
   ]
 }

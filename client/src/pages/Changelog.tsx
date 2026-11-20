@@ -17,7 +17,7 @@ export const changes: ChangelogCard[] = [
     date: "20.11.2026 · 16:55",
     title: "MESAJLAR ARTIK DAHA HIZLI, TEMALAR MİS GİBİ!",
     description: "Mesajların geç gitmesine neden olan sorunları elden geçirdik. Sohbeti hızlandırdık, temalara da bayağı büyük bir güncelleme çaktık.",
-    details: ["GTA 6 teması baştan aşağı yenilendi.", "Koyu ve açık temalar tamamen değiştirildi.", "Mesajlaşma sisteminde büyük iyileştirmeler yapıldı.", "Yazıyor göstergesi artık sohbet ekranında değil, kullanıcı kartında görünüyor.", "Okundu bilgisi daha sade ve hızlı hâle getirildi."],
+    details: ["GTA 6 teması baştan aşağı yenilendi.", "Koyu ve açık temalar tamamen değiştirildi.", "Mesajlaşma sisteminde büyük iyileştirmeler yapıldı.", "Okundu bilgisi daha sade ve hızlı hâle getirildi."],
     live: true,
   },
   {
