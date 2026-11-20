@@ -1,7 +1,7 @@
 import { IdentityTile } from "@/components/chat/Brand";
 import { RoomCard } from "@/components/chat/RoomCard";
 import type { ChatMessage, Identity, RoomCardData } from "@/lib/chatApi";
-import { ArrowUp, Check, CheckCheck, Clock3, LogOut, RotateCcw } from "lucide-react";
+import { ArrowUp, CheckCheck, LogOut, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 function Bubble({
@@ -17,14 +17,12 @@ function Bubble({
     ? ""
     : new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(sentAt);
   const receipt = message.sendState === "sending"
-    ? { label: "Gönderiliyor", className: "receipt--sending", icon: Clock3 }
+    ? { label: "Gönderildi", className: "receipt--sent", icon: CheckCheck }
     : message.sendState === "failed"
       ? { label: "Gönderilemedi", className: "receipt--failed", icon: RotateCcw }
       : message.readAt
         ? { label: "Okundu", className: "receipt--read", icon: CheckCheck }
-        : message.deliveredAt
-          ? { label: "İletildi", className: "receipt--delivered", icon: CheckCheck }
-          : { label: "Gönderildi", className: "receipt--sent", icon: Check };
+        : { label: "Gönderildi", className: "receipt--sent", icon: CheckCheck };
   const ReceiptIcon = receipt.icon;
 
   return (
@@ -47,7 +45,6 @@ function Bubble({
         {message.mine && (
           <span className={`message-receipt ${receipt.className}`} aria-label={receipt.label} title={receipt.label}>
             <ReceiptIcon size={14} strokeWidth={2.1} aria-hidden="true" />
-            <span>{receipt.label}</span>
           </span>
         )}
       </div>
@@ -135,9 +132,11 @@ export function ChatPanel({
             </div>
             <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
               <span className="live-dot" style={{ width: 5, height: 5 }} aria-hidden="true" />
-              çevrimiçi · anonim sohbet
+              <span>çevrimiçi</span>
               {showTypingStatus && (
-                <span className="chat-typing-status" aria-live="polite">· yazıyor</span>
+                <span className="chat-typing-status" aria-live="polite">
+                  · yazıyor<span className="chat-typing-dots" aria-hidden="true">...</span>
+                </span>
               )}
             </span>
           </div>
