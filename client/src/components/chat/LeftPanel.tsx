@@ -31,7 +31,7 @@ export function LeftPanel({
             {message}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--text-dim)]">
-            Çevrimdışı · Sohbet geçmişi silindi.
+            Sohbette Değil · Sohbet geçmişi silindi.
           </p>
         </div>
       </div>

@@ -11,7 +11,7 @@ import { getDb } from "./db.js";
  * Design notes:
  * - No accounts, no profiles. A visitor is a row with a random animal identity
  *   and a secret token kept in the browser.
- * - Presence is a visibility-aware 30-second lease (`lastSeen`). Hidden polls
+ * - Presence is a visibility-aware 60-second lease (`lastSeen`). Hidden polls
  *   do not extend that away timer.
  * - Messages live only while a room is active. Button exits close and delete
  *   immediately; a lost page connection is cleaned after its lease expires.
@@ -19,10 +19,10 @@ import { getDb } from "./db.js";
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** A foreground client that stops heartbeating is disconnected after 30 seconds. */
-export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 30;
-/** Hidden tabs and locked screens use the same 30-second away lease. */
-export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
+/** A foreground client that stops heartbeating expires after 60 seconds. */
+export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 60;
+/** Hidden tabs and locked screens use the same 60-second away lease. */
+export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 60;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;

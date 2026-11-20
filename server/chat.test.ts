@@ -10,12 +10,12 @@ import {
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("uses a 30-second lease for visible and hidden presence", () => {
+  it("uses a 60-second lease for visible and hidden presence", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
-    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(30);
-    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
-    expect(getPartnerTimeoutSeconds(false)).toBe(30);
-    expect(getPartnerTimeoutSeconds(true)).toBe(30);
+    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(60);
+    expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(60);
+    expect(getPartnerTimeoutSeconds(false)).toBe(60);
+    expect(getPartnerTimeoutSeconds(true)).toBe(60);
   });
 
   it("assigns a different animal when the previous identity is excluded", () => {

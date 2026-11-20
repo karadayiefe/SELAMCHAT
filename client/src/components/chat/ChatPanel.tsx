@@ -114,7 +114,7 @@ export function ChatPanel({
   const presenceLabel = partnerPresence === "online"
     ? "Çevrimiçi"
     : partnerPresence === "disconnected"
-      ? "Bağlantı kesildi"
+      ? "Sohbette değil"
       : "Bağlantı kontrol ediliyor";
   const presenceDotClass = partnerPresence === "disconnected"
     ? "live-dot--away"
