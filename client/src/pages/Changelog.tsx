@@ -7,6 +7,7 @@ type ChangelogCard = {
   description: string;
   details?: string[];
   live?: boolean;
+  presenceDetails?: boolean;
   viceCity?: boolean;
   cat?: boolean;
 };
@@ -17,8 +18,9 @@ export const changes: ChangelogCard[] = [
     date: "20.11.2026 · 16:55",
     title: "MESAJLAR ARTIK DAHA HIZLI, TEMALAR MİS GİBİ!",
     description: "Mesajların geç gitmesine neden olan sorunları elden geçirdik. Sohbeti hızlandırdık, temalara da bayağı büyük bir güncelleme çaktık.",
-    details: ["GTA 6 teması baştan aşağı yenilendi.", "Koyu ve açık temalar tamamen değiştirildi.", "Mesajlaşma sisteminde büyük iyileştirmeler yapıldı.", "Okundu bilgisi daha sade ve hızlı hâle getirildi."],
+    details: ["GTA 6 teması baştan aşağı yenilendi.", "Koyu ve açık temalar tamamen değiştirildi.", "Mesajlaşma sisteminde büyük iyileştirmeler yapıldı.", "Okundu bilgisi daha sade ve hızlı hâle getirildi.", "Sohbet durumunu daha anlaşılır kılmak için 2 yeni sohbet detayı eklendi."],
     live: true,
+    presenceDetails: true,
   },
   {
     id: "cat-easter-egg",
@@ -75,6 +77,27 @@ function ChangelogCard({ change, onSelectViceCity, viceMusicPlaying, onToggleVic
       <h2>{change.title}</h2>
       <p className="changelog-entry-description">{change.description}</p>
       {change.details && <ul>{change.details.map(detail => <li key={detail}><Check size={15} aria-hidden="true" /><span>{detail}</span></li>)}</ul>}
+      {change.presenceDetails && (
+        <section className="changelog-presence-card" aria-labelledby={`changelog-presence-title-${change.id}`}>
+          <h3 id={`changelog-presence-title-${change.id}`}>YENİ SOHBET DETAYLARI</h3>
+          <div className="changelog-presence-list">
+            <div className="changelog-presence-item">
+              <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
+                <span className="live-dot" style={{ width: 5, height: 5 }} aria-hidden="true" />
+                <span>Çevrimiçi</span>
+              </span>
+              <p>Kullanıcı aktif olarak sohbet ekranında. Sohbetine devam ediyor ve bağlantısı aktif.</p>
+            </div>
+            <div className="changelog-presence-item">
+              <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
+                <span className="live-dot live-dot--away" style={{ width: 5, height: 5 }} aria-hidden="true" />
+                <span>Sohbette değil</span>
+              </span>
+              <p>Kullanıcı sohbet ekranından ayrıldığında veya başka bir uygulamaya geçtiğinde bu durum gösterilir. 3 dakika içinde geri dönmezse sohbet otomatik olarak kapatılır.</p>
+            </div>
+          </div>
+        </section>
+      )}
       {change.viceCity && onSelectViceCity && (
         <div className="timeline-vice-actions">
           <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>GTA 6 TEMASINI SEÇ</button>

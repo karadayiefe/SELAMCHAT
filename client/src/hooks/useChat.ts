@@ -85,6 +85,7 @@ export function useChat() {
   const stateRef = useRef<ChatState | null>(null);
   const endedRoomIdsRef = useRef(new Set<number>());
   const lifecycleRef = useRef(0);
+  const pendingSessionActionRef = useRef<Promise<void> | null>(null);
   const waitStartedAt = useRef<number | null>(null);
   const optimisticIdRef = useRef(0);
 
@@ -207,6 +208,10 @@ export function useChat() {
       await establish();
 
       while (!cancelled && !pageLeavingRef.current) {
+        if (pendingSessionActionRef.current) {
+          await sleep(120);
+          continue;
+        }
         const token = tokenRef.current;
 
         // No session yet (first load failed or the visitor was swept): retry.
@@ -319,8 +324,20 @@ export function useChat() {
   }, []);
 
   const join = useCallback(async (rotateAnimal = false) => {
-    const token = tokenRef.current;
+    let token = tokenRef.current;
     if (!token) return;
+    const pendingAction = pendingSessionActionRef.current;
+    if (pendingAction) {
+      setBusy(true);
+      try {
+        await pendingAction;
+      } catch { /* The join request below is still the source of truth. */ }
+      token = tokenRef.current;
+      if (!token) {
+        setBusy(false);
+        return;
+      }
+    }
     const lifecycle = ++lifecycleRef.current;
     setBusy(true);
     setNotice(null);
@@ -362,21 +379,28 @@ export function useChat() {
       stateRef.current = cleared;
       setState(cleared);
     }
-    setBusy(true);
-    try {
-      const res = await chatApi.leave(token, rotateAnimal);
-      if (lifecycle === lifecycleRef.current && res.ok) {
-        if (returnToHome) {
-          lifecycleRef.current += 1;
-          setNotice(null);
+    const closingOwnChat = previous?.status === "chatting";
+    setBusy(!closingOwnChat);
+    let operation!: Promise<void>;
+    operation = (async () => {
+      try {
+        const res = await chatApi.leave(token, rotateAnimal);
+        if (lifecycle === lifecycleRef.current && res.ok) {
+          if (returnToHome) {
+            lifecycleRef.current += 1;
+            setNotice(null);
+          }
+          apply(res.state);
         }
-        apply(res.state);
+      } catch {
+        setConnectionIssue(true);
+      } finally {
+        if (pendingSessionActionRef.current === operation) pendingSessionActionRef.current = null;
+        setBusy(false);
       }
-    } catch {
-      setConnectionIssue(true);
-    } finally {
-      setBusy(false);
-    }
+    })();
+    pendingSessionActionRef.current = operation;
+    await operation;
   }, [apply]);
 
   const send = useCallback(
@@ -464,6 +488,14 @@ export function useChat() {
     [apply]
   );
 
+  const returnHome = useCallback(() => {
+    if (stateRef.current?.status === "idle") {
+      setNotice(null);
+      return;
+    }
+    void leave(true);
+  }, [leave]);
+
   const noOneOnline = state?.status === "waiting" && waitSeconds >= NO_ONE_AFTER_SECONDS;
 
 
@@ -477,6 +509,7 @@ export function useChat() {
     noOneOnline,
     join,
     leave,
+    returnHome,
     send,
   };
 }

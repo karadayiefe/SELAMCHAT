@@ -22,6 +22,7 @@ export default function Home() {
     noOneOnline,
     join,
     leave,
+    returnHome,
     send,
   } = useChat();
 
@@ -79,7 +80,7 @@ export default function Home() {
                 messages={state.messages}
                 busy={busy}
                 onSend={send}
-                onLeave={() => void leave()}
+                onLeave={() => void leave(true)}
               />
             ) : status === "waiting" ? (
               <WaitingPanel
@@ -94,7 +95,7 @@ export default function Home() {
             ) : status === "partner_left" ? (
               <LeftPanel message="Karşıdaki kişi ayrıldı." me={state.me} busy={busy} onFindNew={() => void leave(true)} />
             ) : ownLeaveNotice ? (
-              <LeftPanel message="Sohbeti bitirdin. Her şey silindi." me={state.me} busy={busy} onFindNew={() => void leave(true)} />
+              <LeftPanel message="Sohbeti bitirdin. Her şey silindi." me={state.me} busy={false} onFindNew={returnHome} />
             ) : (
               <IdlePanel me={state.me} busy={busy} onStart={() => void join()} />
             )}
