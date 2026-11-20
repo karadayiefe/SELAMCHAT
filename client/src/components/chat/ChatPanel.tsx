@@ -82,8 +82,6 @@ export function ChatPanel({
   onTyping: () => void;
 }) {
   const [text, setText] = useState("");
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const shellRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -100,54 +98,15 @@ export function ChatPanel({
   }, [text]);
 
   useEffect(() => {
-    const shell = shellRef.current;
     const viewport = window.visualViewport;
-    if (!shell || !viewport) return;
-
-    let frame = 0;
-    const updateKeyboardLayout = () => {
-      cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const focused = document.activeElement === inputRef.current;
-        const layoutHeight = document.documentElement.clientHeight;
-        const inset = viewport.scale > 1.01
-          ? 0
-          : Math.max(0, layoutHeight - viewport.height - viewport.offsetTop);
-        const open = focused && inset > 80;
-
-        if (open) {
-          const rect = shell.getBoundingClientRect();
-          shell.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
-          shell.style.setProperty("--composer-left", `${Math.round(rect.left)}px`);
-          shell.style.setProperty("--composer-width", `${Math.round(rect.width)}px`);
-        } else {
-          shell.style.removeProperty("--keyboard-inset");
-          shell.style.removeProperty("--composer-left");
-          shell.style.removeProperty("--composer-width");
-        }
-
-        shell.dataset.keyboardOpen = open ? "true" : "false";
-        setKeyboardOpen(previous => previous === open ? previous : open);
-      });
+    if (!viewport) return;
+    const keepComposerVisible = () => {
+      if (document.activeElement !== inputRef.current) return;
+      window.requestAnimationFrame(() => inputRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" }));
     };
-
-    updateKeyboardLayout();
-    viewport.addEventListener("resize", updateKeyboardLayout);
-    viewport.addEventListener("scroll", updateKeyboardLayout);
-    window.addEventListener("resize", updateKeyboardLayout);
-    document.addEventListener("focusin", updateKeyboardLayout);
-    document.addEventListener("focusout", updateKeyboardLayout);
+    viewport.addEventListener("resize", keepComposerVisible);
     return () => {
-      cancelAnimationFrame(frame);
-      viewport.removeEventListener("resize", updateKeyboardLayout);
-      viewport.removeEventListener("scroll", updateKeyboardLayout);
-      window.removeEventListener("resize", updateKeyboardLayout);
-      document.removeEventListener("focusin", updateKeyboardLayout);
-      document.removeEventListener("focusout", updateKeyboardLayout);
-      shell.removeAttribute("data-keyboard-open");
-      shell.style.removeProperty("--keyboard-inset");
-      shell.style.removeProperty("--composer-left");
-      shell.style.removeProperty("--composer-width");
+      viewport.removeEventListener("resize", keepComposerVisible);
     };
   }, []);
 
@@ -160,7 +119,7 @@ export function ChatPanel({
   };
 
   return (
-    <section ref={shellRef} className="chat-shell fade-up" data-keyboard-open={keyboardOpen ? "true" : "false"}>
+    <section className="chat-shell fade-up">
       <header className="chat-head">
         <div className="flex min-w-0 items-center gap-2.5">
           <IdentityTile identity={partner} small />

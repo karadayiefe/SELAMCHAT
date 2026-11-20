@@ -765,7 +765,6 @@
     flex-direction: column;
     height: clamp(430px, 74dvh, 640px);
     min-width: 0;
-    position: relative;
   }
 
   .chat-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; flex: none; }
@@ -983,20 +982,6 @@
       overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    }
-
-    /* Keep the card where it is. Only the composer follows the visual viewport. */
-    .chat-shell[data-keyboard-open="true"] .composer {
-      position: fixed;
-      z-index: 20;
-      left: var(--composer-left);
-      width: var(--composer-width);
-      bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom));
-      box-shadow: 0 -10px 24px -18px rgba(0, 0, 0, 0.72);
-    }
-
-    .chat-shell[data-keyboard-open="true"] .chat-scroll {
-      padding-bottom: calc(6rem + var(--keyboard-inset, 0px));
     }
 
     .composer {
