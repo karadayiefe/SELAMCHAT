@@ -71,7 +71,7 @@ export function ThemeProvider({
   useEffect(() => {
     const audio = new Audio("/a-gta6-theme.mp3");
     audio.loop = true;
-    audio.volume = 0.32;
+    audio.volume = 0.6;
     viceAudioRef.current = audio;
 
     return () => {

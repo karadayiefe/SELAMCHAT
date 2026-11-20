@@ -16,7 +16,7 @@ export const changes: ChangelogCard[] = [
   {
     id: "messages-faster",
     date: "20.11.2026 · 16:55",
-    title: "MESAJLAR ARTIK DAHA HIZLI, TEMALAR MİS GİBİ!",
+    title: "MESAJLAR ARTIK DAHA HIZLI, TEMALAR TAŞŞA GİBİ.",
     description: "Mesajların geç gitmesine neden olan sorunları elden geçirdik. Sohbeti hızlandırdık, temalara da bayağı büyük bir güncelleme çaktık.",
     details: ["GTA 6 teması baştan aşağı yenilendi.", "Koyu ve açık temalar tamamen değiştirildi.", "Mesajlaşma sisteminde büyük iyileştirmeler yapıldı.", "Okundu bilgisi daha sade ve hızlı hâle getirildi.", "Sohbet durumunu daha anlaşılır kılmak için 2 yeni sohbet detayı eklendi."],
     live: true,
