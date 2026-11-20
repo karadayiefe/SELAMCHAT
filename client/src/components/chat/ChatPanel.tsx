@@ -59,6 +59,7 @@ function Bubble({
 
 export function ChatPanel({
   partner,
+  partnerPresence,
   roomCard,
   messages,
   busy,
@@ -66,6 +67,7 @@ export function ChatPanel({
   onLeave,
 }: {
   partner: Identity;
+  partnerPresence: "online" | "disconnected" | null;
   roomCard: RoomCardData | null;
   messages: ChatMessage[];
   busy: boolean;
@@ -109,6 +111,16 @@ export function ChatPanel({
     await onSend(value);
     inputRef.current?.focus();
   };
+  const presenceLabel = partnerPresence === "online"
+    ? "Çevrimiçi"
+    : partnerPresence === "disconnected"
+      ? "Bağlantı kesildi"
+      : "Bağlantı kontrol ediliyor";
+  const presenceDotClass = partnerPresence === "disconnected"
+    ? "live-dot--away"
+    : partnerPresence === "online"
+      ? ""
+      : "live-dot--unknown";
 
 
   return (
@@ -124,8 +136,8 @@ export function ChatPanel({
               <span aria-hidden="true">{partner.emoji}</span>
             </div>
             <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
-              <span className="live-dot" style={{ width: 5, height: 5 }} aria-hidden="true" />
-              <span>çevrimiçi</span>
+              <span className={`live-dot ${presenceDotClass}`} style={{ width: 5, height: 5 }} aria-hidden="true" />
+              <span>{presenceLabel}</span>
             </span>
           </div>
         </div>

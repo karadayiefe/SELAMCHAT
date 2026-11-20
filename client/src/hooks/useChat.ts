@@ -34,6 +34,37 @@ function readStoredToken(): string | null {
   }
 }
 
+const visibilityVersions = new Map<string, number>();
+
+function reportVisibilityBeacon(token: string, hidden: boolean) {
+  const key = `selamchat:visibility-version:${token}`;
+  let version = Math.max(Date.now(), (visibilityVersions.get(token) ?? 0) + 1);
+  try {
+    const stored = Number(window.sessionStorage.getItem(key) ?? 0);
+    if (Number.isSafeInteger(stored)) version = Math.max(version, stored + 1);
+    window.sessionStorage.setItem(key, String(version));
+  } catch { /* A per-document monotonic value remains as a fallback. */ }
+  visibilityVersions.set(token, version);
+
+  const body = JSON.stringify({ token, hidden, version });
+  const payload = new Blob([body], { type: "application/json" });
+  let queued = false;
+  try {
+    if (typeof navigator.sendBeacon === "function") {
+      queued = navigator.sendBeacon("/api/chat/visibility", payload);
+    }
+  } catch { /* Fall through to a keepalive fetch. */ }
+  if (!queued) {
+    void fetch("/api/chat/visibility", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      credentials: "same-origin",
+      keepalive: true,
+    }).catch(() => undefined);
+  }
+}
+
 /**
  * Owns the anonymous session and polls the server.
  * Polling (instead of a WebSocket) keeps the app on the standard stateless
@@ -83,7 +114,7 @@ export function useChat() {
     const safeState =
       stateToApply.status === "chatting"
         ? stateToApply
-        : { ...stateToApply, roomId: null, roomCode: null, roomCard: null, partner: null, messages: [] };
+        : { ...stateToApply, roomId: null, roomCode: null, roomCard: null, partner: null, partnerPresence: null, messages: [] };
     stateRef.current = safeState;
     tokenRef.current = safeState.token;
     statusRef.current = safeState.status;
@@ -100,10 +131,11 @@ export function useChat() {
     setState(safeState);
   }, []);
 
-  const applyMessages = useCallback((messages: ChatMessage[]) => {
+  const applyMessages = useCallback((messages: ChatMessage[], partnerPresence?: "online" | "disconnected") => {
     const previous = stateRef.current;
     if (!previous || previous.status !== "chatting") return;
-    const next = mergeUnconfirmedMessages(previous, { ...previous, messages });
+    const merged = mergeUnconfirmedMessages(previous, { ...previous, messages });
+    const next = partnerPresence ? { ...merged, partnerPresence } : merged;
     stateRef.current = next;
     setState(next);
   }, []);
@@ -113,7 +145,6 @@ export function useChat() {
     let cancelled = false;
     let timeoutId: number | undefined;
     let wakeSleep: (() => void) | null = null;
-    let lastVisibilityVersion = 0;
     const navigationType = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     let rejoinAfterReload = false;
     try {
@@ -197,7 +228,7 @@ export function useChat() {
           if (lifecycle !== lifecycleRef.current) continue;
 
           if (res.ok && res.messages && statusRef.current === "chatting") {
-            applyMessages(res.messages);
+            applyMessages(res.messages, res.partnerPresence);
             setConnectionIssue(false);
           } else if (res.ok && res.state) {
             apply(res.state);
@@ -219,33 +250,7 @@ export function useChat() {
     const reportVisibility = () => {
       if (pageLeavingRef.current) return;
       const token = tokenRef.current;
-      if (token) {
-        let version = Math.max(Date.now(), lastVisibilityVersion + 1);
-        try {
-          const key = `selamchat:visibility-version:${token}`;
-          const stored = Number(window.sessionStorage.getItem(key) ?? 0);
-          if (Number.isSafeInteger(stored)) version = Math.max(version, stored + 1);
-          window.sessionStorage.setItem(key, String(version));
-        } catch { /* Fall back to the in-memory monotonic counter. */ }
-        lastVisibilityVersion = version;
-        const body = JSON.stringify({ token, hidden: document.hidden, version });
-        const payload = new Blob([body], { type: "application/json" });
-        let queued = false;
-        try {
-          if (typeof navigator.sendBeacon === "function") {
-            queued = navigator.sendBeacon("/api/chat/visibility", payload);
-          }
-        } catch { /* Fall through to a keepalive fetch. */ }
-        if (!queued) {
-          void fetch("/api/chat/visibility", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-            credentials: "same-origin",
-            keepalive: true,
-          }).catch(() => undefined);
-        }
-      }
+      if (token) reportVisibilityBeacon(token, document.hidden);
       if (!document.hidden) wakeSleep?.();
     };
     document.addEventListener("visibilitychange", reportVisibility);
@@ -292,14 +297,25 @@ export function useChat() {
       if (!token) return;
       pageLeavingRef.current = true;
       lifecycleRef.current += 1;
+      reportVisibilityBeacon(token, true);
       try {
         if (stateRef.current?.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
         else sessionStorage.removeItem(RELOAD_MATCH_KEY);
       } catch { /* Reload continuity is best-effort when storage is blocked. */ }
     };
+    const restore = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      pageLeavingRef.current = false;
+      lifecycleRef.current += 1;
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
 
     window.addEventListener("pagehide", bye);
-    return () => window.removeEventListener("pagehide", bye);
+    window.addEventListener("pageshow", restore);
+    return () => {
+      window.removeEventListener("pagehide", bye);
+      window.removeEventListener("pageshow", restore);
+    };
   }, []);
 
   const join = useCallback(async (rotateAnimal = false) => {
@@ -339,6 +355,7 @@ export function useChat() {
         roomCode: null,
         roomCard: null,
         partner: null,
+        partnerPresence: null,
         messages: [],
       };
       stateRef.current = cleared;

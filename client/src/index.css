@@ -619,6 +619,26 @@
     border-color: rgba(127, 200, 255, 0.45);
   }
 
+  .live-dot--away {
+    background: var(--amber);
+    box-shadow: 0 0 7px rgba(255, 200, 97, 0.55);
+  }
+
+  .live-dot--away::after {
+    animation: none;
+    border-color: rgba(255, 200, 97, 0.35);
+  }
+
+  .live-dot--unknown {
+    background: var(--text-dim);
+    box-shadow: none;
+  }
+
+  .live-dot--unknown::after {
+    animation: none;
+    border-color: rgba(150, 160, 175, 0.25);
+  }
+
   .panel {
     position: relative;
     width: 100%;

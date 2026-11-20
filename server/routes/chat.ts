@@ -65,8 +65,11 @@ export function registerChatRoutes(app: Express) {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
       const messages = await getMessages(token);
-      if (messages === null) return { ok: false, error: "no_session" };
-      return { ok: true, messages };
+      if (messages === null) {
+        const state = await getState(token);
+        return state ? { ok: true, state } : { ok: false, error: "no_session" };
+      }
+      return { ok: true, messages: messages.messages, partnerPresence: messages.partnerPresence };
     })
   );
 

@@ -34,6 +34,7 @@ export type ChatState = {
   roomCard: RoomCardData | null;
   me: Identity;
   partner: Identity | null;
+  partnerPresence: "online" | "disconnected" | null;
   messages: ChatMessage[];
   counters: { online: number; activeChats: number };
   serverTime: string;
@@ -45,6 +46,7 @@ export type ChatResponse = {
   token?: string;
   state?: ChatState | null;
   messages?: ChatMessage[];
+  partnerPresence?: "online" | "disconnected";
 };
 
 // Vercel apex domain is intentionally redirected to www. Use the canonical

@@ -25,6 +25,7 @@ const state = (messages: ChatMessage[], roomId = 7): ChatState => ({
   roomCard: null,
   me: { animalKey: "kedi", name: "Kedi", emoji: "🐱", color: "#B79BFF" },
   partner: { animalKey: "tilki", name: "Tilki", emoji: "🦊", color: "#FF8A4C" },
+  partnerPresence: "online",
   messages,
   counters: { online: 2, activeChats: 1 },
   serverTime: "2026-11-18T00:00:00.000Z",
@@ -50,6 +51,27 @@ describe("optimistic chat state merging", () => {
     const merged = mergeUnconfirmedMessages(state([message()]), state([confirmed]));
 
     expect(merged.messages).toEqual([confirmed]);
+  });
+
+  it("applies a fresh readAt from the fast message poll without keeping the stale receipt", () => {
+    const unread = message({ id: 42, sendState: undefined, readAt: null });
+    const readAt = "2026-11-18T00:00:02.000Z";
+    const read = message({ id: 42, sendState: undefined, readAt });
+
+    expect(mergeUnconfirmedMessages(state([unread]), state([read])).messages[0].readAt).toBe(readAt);
+  });
+
+  it("preserves the server's order and uniqueness for ten rapid confirmed messages", () => {
+    const ten = Array.from({ length: 10 }, (_, index) => message({
+      id: index + 1,
+      clientId: `rapid_${String(index).padStart(16, "0")}`,
+      body: `Mesaj ${index + 1}`,
+      sendState: undefined,
+    }));
+    const merged = mergeUnconfirmedMessages(state([]), state(ten));
+
+    expect(merged.messages.map(item => item.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(new Set(merged.messages.map(item => item.clientId)).size).toBe(10);
   });
 
   it("does not carry an unconfirmed message into a different room", () => {

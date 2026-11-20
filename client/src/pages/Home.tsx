@@ -74,6 +74,7 @@ export default function Home() {
             {status === "chatting" && state.partner ? (
               <ChatPanel
                 partner={state.partner}
+                partnerPresence={state.partnerPresence}
                 roomCard={state.roomCard}
                 messages={state.messages}
                 busy={busy}
