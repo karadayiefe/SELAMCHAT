@@ -8,6 +8,7 @@ export function Wordmark() {
           <img className="wordmark-logo wordmark-logo--dark" src="/logo-dark.svg" alt="" />
           <img className="wordmark-logo wordmark-logo--light" src="/logo-light.svg" alt="" />
           <img className="wordmark-logo wordmark-logo--vice-city" src="/logo-vice-city.svg" alt="" />
+          <img className="wordmark-logo wordmark-logo--cat" src="/logo-cat.svg" alt="" />
         </span>
         <span aria-label="SELAMCHAT">
           SELAM<span className="wordmark-accent">CHAT</span>
