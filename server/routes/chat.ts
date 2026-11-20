@@ -64,8 +64,7 @@ export function registerChatRoutes(app: Express) {
     respond(req, res, async () => {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const messages = await getMessages(token, body.visible === true);
+      const messages = await getMessages(token);
       if (messages === null) return { ok: false, error: "no_session" };
       return { ok: true, messages };
     })
@@ -129,6 +128,7 @@ export function registerChatRoutes(app: Express) {
       return result;
     })
   );
+
 
   // Beacon target for tab close / page hide.
   router.post("/bye", (req, res) =>

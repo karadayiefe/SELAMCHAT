@@ -83,20 +83,13 @@ export function useChat() {
     const safeState =
       stateToApply.status === "chatting"
         ? stateToApply
-        : {
-            ...stateToApply,
-            roomId: null,
-            roomCode: null,
-            roomCard: null,
-            partner: null,
-            messages: [],
-          };
+        : { ...stateToApply, roomId: null, roomCode: null, roomCard: null, partner: null, messages: [] };
     stateRef.current = safeState;
     tokenRef.current = safeState.token;
     statusRef.current = safeState.status;
     meRef.current = safeState.me;
     try {
-      // Persist this document's token; pagehide rotates it before a reload's new document starts.
+      // Keep the same token in this tab so a reload is not counted as a new visitor.
       sessionStorage.setItem(TOKEN_KEY, safeState.token);
       sessionStorage.setItem(ANIMAL_KEY, safeState.me.animalKey);
       if (safeState.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
@@ -127,9 +120,7 @@ export function useChat() {
       const isReload = navigationType?.type === "reload";
       rejoinAfterReload = isReload && sessionStorage.getItem(RELOAD_MATCH_KEY) === "1";
       sessionStorage.removeItem(RELOAD_MATCH_KEY);
-    } catch {
-      /* A fresh identity is best-effort when storage is blocked. */
-    }
+    } catch { /* A fresh identity is best-effort when storage is blocked. */ }
 
     const sleep = (ms: number) =>
       new Promise<void>(resolve => {
@@ -153,18 +144,10 @@ export function useChat() {
           let token = readStoredToken();
           if (!token) {
             token = createSessionToken();
-            try {
-              sessionStorage.setItem(TOKEN_KEY, token);
-            } catch {
-              /* Server still issues a session. */
-            }
+            try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* Server still issues a session. */ }
           }
           let avoidAnimalKey: string | null = null;
-          try {
-            avoidAnimalKey = sessionStorage.getItem(ANIMAL_KEY);
-          } catch {
-            /* Best-effort identity rotation. */
-          }
+          try { avoidAnimalKey = sessionStorage.getItem(ANIMAL_KEY); } catch { /* Best-effort identity rotation. */ }
           const res = await chatApi.session(token, avoidAnimalKey);
           if (cancelled || pageLeavingRef.current) return;
           if (res.ok && res.state) {
@@ -207,10 +190,9 @@ export function useChat() {
         const lifecycle = lifecycleRef.current;
         try {
           fastPolls += 1;
-          const res =
-            statusRef.current === "chatting" && fastPolls % 5 !== 0
-              ? await chatApi.messages(token, !document.hidden)
-              : await chatApi.state(token);
+          const res = statusRef.current === "chatting" && fastPolls % 5 !== 0
+            ? await chatApi.messages(token)
+            : await chatApi.state(token);
           if (cancelled || pageLeavingRef.current) break;
           if (lifecycle !== lifecycleRef.current) continue;
 
@@ -221,20 +203,8 @@ export function useChat() {
             apply(res.state);
             setConnectionIssue(false);
           } else if (res.error === "no_session") {
-            // A message poll can discover a closed room before the slower state poll.
-            // Read the old token's terminal status before creating a replacement session.
-            const recovered = await chatApi.state(token);
-            if (recovered.ok && recovered.state) {
-              if (!cancelled && !pageLeavingRef.current && lifecycle === lifecycleRef.current) {
-                apply(recovered.state);
-                setConnectionIssue(false);
-              }
-            } else if (recovered.error === "no_session") {
-              const fresh = await chatApi.session(null);
-              if (!cancelled && !pageLeavingRef.current && lifecycle === lifecycleRef.current && fresh.ok) {
-                apply(fresh.state);
-              }
-            }
+            const fresh = await chatApi.session(null);
+            if (!cancelled && !pageLeavingRef.current && lifecycle === lifecycleRef.current && fresh.ok) apply(fresh.state);
           }
         } catch {
           if (!cancelled) setConnectionIssue(true);
@@ -256,24 +226,16 @@ export function useChat() {
           const stored = Number(window.sessionStorage.getItem(key) ?? 0);
           if (Number.isSafeInteger(stored)) version = Math.max(version, stored + 1);
           window.sessionStorage.setItem(key, String(version));
-        } catch {
-          /* Fall back to the in-memory monotonic counter. */
-        }
+        } catch { /* Fall back to the in-memory monotonic counter. */ }
         lastVisibilityVersion = version;
-        const body = JSON.stringify({
-          token,
-          hidden: document.hidden,
-          version,
-        });
+        const body = JSON.stringify({ token, hidden: document.hidden, version });
         const payload = new Blob([body], { type: "application/json" });
         let queued = false;
         try {
           if (typeof navigator.sendBeacon === "function") {
             queued = navigator.sendBeacon("/api/chat/visibility", payload);
           }
-        } catch {
-          /* Fall through to a keepalive fetch. */
-        }
+        } catch { /* Fall through to a keepalive fetch. */ }
         if (!queued) {
           void fetch("/api/chat/visibility", {
             method: "POST",
@@ -321,7 +283,8 @@ export function useChat() {
     if (state?.status === "chatting" || state?.status === "waiting") setNotice(null);
   }, [state?.status]);
 
-  // Notify immediately on a real page exit; the server lease remains the fallback if delivery fails.
+  // Keep the tab token across reloads. The server lease handles real tab exits;
+  // deleting the token here made every rapid F5 look like a new visitor.
   useEffect(() => {
     const bye = (event: PageTransitionEvent) => {
       if (event.persisted) return;
@@ -332,36 +295,28 @@ export function useChat() {
       try {
         if (stateRef.current?.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
         else sessionStorage.removeItem(RELOAD_MATCH_KEY);
-        // A reloaded document gets a fresh token so a late bye beacon cannot delete its new session.
-        sessionStorage.removeItem(TOKEN_KEY);
-      } catch {
-        /* Reload continuity is best-effort when storage is blocked. */
-      }
-      chatApi.pageExit(token);
+      } catch { /* Reload continuity is best-effort when storage is blocked. */ }
     };
 
     window.addEventListener("pagehide", bye);
     return () => window.removeEventListener("pagehide", bye);
   }, []);
 
-  const join = useCallback(
-    async (rotateAnimal = false) => {
-      const token = tokenRef.current;
-      if (!token) return;
-      const lifecycle = ++lifecycleRef.current;
-      setBusy(true);
-      setNotice(null);
-      try {
-        const res = await chatApi.join(token, rotateAnimal);
-        if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
-      } catch {
-        setConnectionIssue(true);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [apply]
-  );
+  const join = useCallback(async (rotateAnimal = false) => {
+    const token = tokenRef.current;
+    if (!token) return;
+    const lifecycle = ++lifecycleRef.current;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const res = await chatApi.join(token, rotateAnimal);
+      if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
+    } catch {
+      setConnectionIssue(true);
+    } finally {
+      setBusy(false);
+    }
+  }, [apply]);
 
   const leave = useCallback(async () => {
     const token = tokenRef.current;
@@ -375,11 +330,7 @@ export function useChat() {
       endedRoomIdsRef.current.add(previous.roomId);
     }
     statusRef.current = "idle";
-    try {
-      sessionStorage.removeItem(RELOAD_MATCH_KEY);
-    } catch {
-      /* Storage can be unavailable. */
-    }
+    try { sessionStorage.removeItem(RELOAD_MATCH_KEY); } catch { /* Storage can be unavailable. */ }
     if (previous) {
       const cleared: ChatState = {
         ...previous,
@@ -419,7 +370,7 @@ export function useChat() {
         const optimistic: ChatMessage = existing
           ? { ...existing, sendState: "sending" }
           : {
-              id: -++optimisticIdRef.current,
+              id: -(++optimisticIdRef.current),
               clientId,
               body,
               mine: true,
@@ -434,7 +385,7 @@ export function useChat() {
         const optimisticState = {
           ...currentState,
           messages: existing
-            ? currentState.messages.map(message => (message.clientId === clientId ? optimistic : message))
+            ? currentState.messages.map(message => message.clientId === clientId ? optimistic : message)
             : [...currentState.messages, optimistic],
         };
         stateRef.current = optimisticState;
@@ -490,6 +441,7 @@ export function useChat() {
   );
 
   const noOneOnline = state?.status === "waiting" && waitSeconds >= NO_ONE_AFTER_SECONDS;
+
 
   return {
     state,
