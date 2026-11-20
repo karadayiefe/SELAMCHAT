@@ -62,17 +62,21 @@ export function ChatPanel({
   partner,
   roomCard,
   messages,
+  partnerTyping,
   busy,
   onSend,
   onLeave,
+  onTyping,
 }: {
   me: Identity;
   partner: Identity;
   roomCard: RoomCardData | null;
   messages: ChatMessage[];
+  partnerTyping: boolean;
   busy: boolean;
   onSend: (body: string, clientId?: string) => Promise<boolean>;
   onLeave: () => void;
+  onTyping: () => void;
 }) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -89,6 +93,14 @@ export function ChatPanel({
     element.style.height = "auto";
     element.style.height = `${Math.min(element.scrollHeight, 88)}px`;
   }, [text]);
+
+  // Typing is sent only after the user pauses briefly. This avoids a request
+  // for every keystroke and keeps a fast send independent from typing writes.
+  useEffect(() => {
+    if (!text.trim()) return;
+    const timeoutId = window.setTimeout(onTyping, 650);
+    return () => window.clearTimeout(timeoutId);
+  }, [text, onTyping]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -111,8 +123,7 @@ export function ChatPanel({
     inputRef.current?.focus();
   };
 
-  const localTyping = text.trim().length > 0;
-  const showTypingStatus = localTyping;
+  const showTypingStatus = partnerTyping;
 
   return (
     <section className="chat-shell fade-up">

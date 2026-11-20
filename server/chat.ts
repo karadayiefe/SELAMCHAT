@@ -574,8 +574,13 @@ export async function sendMessage(
 }
 
 export async function setTyping(_token: string): Promise<void> {
-  // Typing is rendered locally in the composer. Never write it to the
-  // database: a presence write must not contend with message delivery.
+  const d = await db();
+  // One conditional write only; the client debounces this signal and never
+  // waits for it, so typing cannot become part of the message request path.
+  await d
+    .update(participants)
+    .set({ typingAt: sql`NOW()` })
+    .where(and(eq(participants.token, _token), eq(participants.status, "chatting"), sql`${participants.roomId} IS NOT NULL`));
 }
 
 /** Visibility is a separate hint; hidden clients get the same 30-second lease. */
