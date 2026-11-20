@@ -69,7 +69,7 @@ export function ThemeProvider({
   }, []);
 
   useEffect(() => {
-    const audio = new Audio("/vice-city-theme.mp3");
+    const audio = new Audio("/a-gta6-theme.mp3");
     audio.loop = true;
     audio.volume = 0.32;
     viceAudioRef.current = audio;

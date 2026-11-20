@@ -35,7 +35,7 @@ export const changes: ChangelogCard[] = [
     date: "18.11.2026 · 17:48",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
     description: "Vice City havasını SELAMCHAT'e taşıdık. Artık sohbet ederken biraz da Vice City'deymişsiniz gibi hissedebilirsiniz.",
-    details: ["GTA 6 özel teması eklendi.", "Blood In Your Eyes (GTA 6) tema müziği eklendi."],
+    details: ["GTA 6 özel teması eklendi.", "A GTA 6 Dianzi geliyo."],
     viceCity: true,
   },
   {
@@ -101,7 +101,7 @@ function ChangelogCard({ change, onSelectViceCity, viceMusicPlaying, onToggleVic
       {change.viceCity && onSelectViceCity && (
         <div className="timeline-vice-actions">
           <button type="button" className="changelog-vice-button" onClick={onSelectViceCity}>GTA 6 TEMASINI SEÇ</button>
-          {onToggleViceMusic && <button type="button" className="changelog-vice-button changelog-music-button changelog-icon-button" onClick={onToggleViceMusic} aria-pressed={viceMusicPlaying} aria-label={viceMusicPlaying ? "Blood In Your Eyes müziğini durdur" : "Blood In Your Eyes müziğini oynat"} title={viceMusicPlaying ? "Müziği durdur" : "Müziği oynat"}>{viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />}</button>}
+          {onToggleViceMusic && <button type="button" className="changelog-vice-button changelog-music-button changelog-icon-button" onClick={onToggleViceMusic} aria-pressed={viceMusicPlaying} aria-label={viceMusicPlaying ? "A GTA 6 müziğini durdur" : "A GTA 6 müziğini oynat"} title={viceMusicPlaying ? "Müziği durdur" : "Müziği oynat"}>{viceMusicPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />}</button>}
         </div>
       )}
     </article>
