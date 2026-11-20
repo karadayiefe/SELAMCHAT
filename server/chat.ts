@@ -525,21 +525,6 @@ export async function sendMessage(
 
     const roomId = current.roomId;
 
-    const [room] = await tx
-      .select()
-      .from(rooms)
-      .where(eq(rooms.id, roomId))
-      .for("update")
-      .limit(1);
-
-    if (!room || room.status !== "active") {
-      await tx
-        .update(participants)
-        .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
-        .where(and(eq(participants.id, current.id), eq(participants.roomId, roomId)));
-      return false;
-    }
-
     const duplicate = await tx
       .select({ id: messages.id })
       .from(messages)
@@ -548,11 +533,23 @@ export async function sendMessage(
     if (duplicate.length > 0) return "sent" as const;
     if (!allowMessage(token)) return "too_fast" as const;
 
-    const insertedMessage = await tx.insert(messages).values({ roomId, senderId: current.id, clientId, body });
-    await tx
+    // Updating the active room is both the liveness check and the row lock.
+    // closeRoom uses the same room row after participant locks, so the existing
+    // send/leave serialization remains intact without a separate SELECT.
+    const roomTouch = await tx
       .update(rooms)
       .set({ lastActivity: sql`NOW()` })
       .where(and(eq(rooms.id, roomId), eq(rooms.status, "active")));
+
+    if (Number(roomTouch[0].affectedRows) !== 1) {
+      await tx
+        .update(participants)
+        .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
+        .where(and(eq(participants.id, current.id), eq(participants.roomId, roomId)));
+      return false;
+    }
+
+    const insertedMessage = await tx.insert(messages).values({ roomId, senderId: current.id, clientId, body });
     await tx
       .update(participants)
       .set({ typingAt: null, lastSeen: sql`NOW()` })
