@@ -48,8 +48,8 @@ export function LeftPanel({
       </button>
 
       {roomCard && (
-        <div className="mt-3 flex">
-          <RoomCard card={roomCard} />
+        <div className="mt-3 flex justify-center">
+          <RoomCard card={roomCard} size="large" />
         </div>
       )}
 

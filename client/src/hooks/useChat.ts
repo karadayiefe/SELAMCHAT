@@ -78,6 +78,7 @@ export function useChat() {
   const [waitSeconds, setWaitSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
   const [lastRoomCard, setLastRoomCard] = useState<RoomCardData | null>(null);
+  const [lastChatMe, setLastChatMe] = useState<ChatState["me"] | null>(null);
 
   const tokenRef = useRef<string | null>(null);
   const statusRef = useRef<ChatStatus>("idle");
@@ -99,6 +100,7 @@ export function useChat() {
       (next.status !== "chatting" || next.roomId !== previous.roomId)
     ) {
       if (previous.roomCard) setLastRoomCard(previous.roomCard);
+      setLastChatMe(previous.me);
       endedRoomIdsRef.current.add(previous.roomId);
       if (endedRoomIdsRef.current.size > 100) {
         const oldest = endedRoomIdsRef.current.values().next().value;
@@ -113,7 +115,10 @@ export function useChat() {
     }
 
     const stateToApply = mergeUnconfirmedMessages(previous, next);
-    if (stateToApply.status === "chatting") setLastRoomCard(null);
+    if (stateToApply.status === "chatting") {
+      setLastRoomCard(null);
+      setLastChatMe(null);
+    }
 
     const safeState =
       stateToApply.status === "chatting"
@@ -345,6 +350,7 @@ export function useChat() {
     setBusy(true);
     setNotice(null);
     setLastRoomCard(null);
+    setLastChatMe(null);
     try {
       const res = await chatApi.join(token, rotateAnimal);
       if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
@@ -364,6 +370,7 @@ export function useChat() {
     if (previous?.status === "chatting") {
       setNotice("Sohbeti bitirdin. Her şey silindi.");
       if (previous.roomCard) setLastRoomCard(previous.roomCard);
+      setLastChatMe(previous.me);
     }
     if (previous?.roomId !== null && previous?.roomId !== undefined) {
       endedRoomIdsRef.current.add(previous.roomId);
@@ -395,6 +402,7 @@ export function useChat() {
             lifecycleRef.current += 1;
             setNotice(null);
             setLastRoomCard(null);
+            setLastChatMe(null);
           }
           apply(res.state);
         }
@@ -498,6 +506,7 @@ export function useChat() {
     if (stateRef.current?.status === "idle") {
       setNotice(null);
       setLastRoomCard(null);
+      setLastChatMe(null);
       return;
     }
     void leave(true);
@@ -515,6 +524,7 @@ export function useChat() {
     waitSeconds,
     noOneOnline,
     lastRoomCard,
+    lastChatMe,
     join,
     leave,
     returnHome,

@@ -789,6 +789,7 @@
 
   .chat-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; flex: none; }
   .room-card-trigger { white-space: nowrap; line-height: 1.1; }
+  .room-card-trigger--large { min-height: 2.8rem; padding: 0.68rem 1rem; font-size: 0.9rem; }
   .room-card-dialog { max-width: 30rem; border-color: var(--line-strong); background: var(--surface); color: var(--text); }
   .room-card-dialog [data-slot="dialog-description"] { color: var(--text-dim); }
   .room-card-large { display: grid; justify-items: center; gap: 1.4rem; padding: 1rem 0 0.3rem; }

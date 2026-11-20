@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function RoomCard({ card }: { card: RoomCardData }) {
+export function RoomCard({ card, size = "default" }: { card: RoomCardData; size?: "default" | "large" }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [first, second] = card.animals;
@@ -28,12 +28,12 @@ export function RoomCard({ card }: { card: RoomCardData }) {
     <>
       <button
         type="button"
-        className="btn btn-ghost btn-sm room-card-trigger shrink-0"
+        className={`btn btn-ghost ${size === "large" ? "room-card-trigger room-card-trigger--large" : "btn-sm room-card-trigger"} shrink-0`}
         onClick={() => setOpen(true)}
         aria-label="Sohbet Kartını aç"
         aria-haspopup="dialog"
       >
-        <Sparkles size={13} aria-hidden="true" />
+        <Sparkles size={size === "large" ? 15 : 13} aria-hidden="true" />
         <span>Sohbet Kartı</span>
       </button>
 
