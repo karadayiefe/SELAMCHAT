@@ -35,7 +35,7 @@ export const changes: ChangelogCard[] = [
     date: "18.11.2026 · 17:48",
     title: "VICE CITY'YE HOŞ GELDİNİZ",
     description: "Vice City havasını SELAMCHAT'e taşıdık. Artık sohbet ederken biraz da Vice City'deymişsiniz gibi hissedebilirsiniz.",
-    details: ["GTA 6 özel teması eklendi.", "A GTA 6 Dianzi geliyo."],
+    details: ["GTA 6 özel teması eklendi.", "A GTA 6 Dianzi Tema Müziği eklendi."],
     viceCity: true,
   },
   {
