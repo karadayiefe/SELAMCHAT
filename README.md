@@ -1,6 +1,6 @@
- <div align="center">
+<div align="center">
 
-<img src="./logo.png" alt="SELAMCHAT" width="96" />
+<img src="./rounded-logo.png" alt="SELAMCHAT" width="96" />
 
 # SELAMCHAT
 
@@ -14,7 +14,6 @@ A minimal real-time chat platform built around spontaneous conversations.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&labelColor=0d0d10&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Express](https://img.shields.io/badge/Express-4-FFFFFF?style=flat-square&labelColor=0d0d10&logo=express&logoColor=white)](https://expressjs.com)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-FFFFFF?style=flat-square&labelColor=0d0d10&logo=github&logoColor=white)](https://github.com/karadayiefe/SELAMCHAT)
-
 
 <br/>
 
