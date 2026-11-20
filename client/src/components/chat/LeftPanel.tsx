@@ -1,5 +1,6 @@
 import { IdentityTile } from "@/components/chat/Brand";
-import type { Identity } from "@/lib/chatApi";
+import { RoomCard } from "@/components/chat/RoomCard";
+import type { Identity, RoomCardData } from "@/lib/chatApi";
 import { DoorOpen, RotateCw } from "lucide-react";
 
 export function LeftPanel({
@@ -8,12 +9,14 @@ export function LeftPanel({
   onFindNew,
   message,
   showAwayStatus = false,
+  roomCard,
 }: {
   me: Identity;
   busy: boolean;
   onFindNew: () => void;
   message: string;
   showAwayStatus?: boolean;
+  roomCard?: RoomCardData | null;
 }) {
   return (
     <section className="panel-body fade-up">
@@ -43,6 +46,12 @@ export function LeftPanel({
         <RotateCw size={16} strokeWidth={2.4} aria-hidden="true" />
         {busy ? "Ana sayfaya dönülüyor…" : "Yeni kişi bul"}
       </button>
+
+      {roomCard && (
+        <div className="mt-3 flex">
+          <RoomCard card={roomCard} />
+        </div>
+      )}
 
       <div className="mt-4 flex items-center gap-2 text-xs text-[color:var(--text-dim)]">
         <IdentityTile identity={me} small />

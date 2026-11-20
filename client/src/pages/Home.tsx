@@ -20,6 +20,7 @@ export default function Home() {
     connectionIssue,
     waitSeconds,
     noOneOnline,
+    lastRoomCard,
     join,
     leave,
     returnHome,
@@ -91,11 +92,11 @@ export default function Home() {
                 onCancel={() => void leave()}
               />
             ) : status === "connection_lost" ? (
-              <LeftPanel message="Bağlantı kesildi. Sohbet silindi." me={state.me} busy={busy} onFindNew={() => void leave(true)} showAwayStatus />
+              <LeftPanel message="Bağlantı kesildi. Sohbet silindi." me={state.me} busy={busy} onFindNew={() => void leave(true)} showAwayStatus roomCard={lastRoomCard} />
             ) : status === "partner_left" ? (
-              <LeftPanel message="Karşıdaki kişi ayrıldı." me={state.me} busy={busy} onFindNew={() => void leave(true)} />
+              <LeftPanel message="Karşıdaki kişi ayrıldı." me={state.me} busy={busy} onFindNew={() => void leave(true)} roomCard={lastRoomCard} />
             ) : ownLeaveNotice ? (
-              <LeftPanel message="Sohbeti bitirdin. Her şey silindi." me={state.me} busy={false} onFindNew={returnHome} />
+              <LeftPanel message="Sohbeti bitirdin. Her şey silindi." me={state.me} busy={false} onFindNew={returnHome} roomCard={lastRoomCard} />
             ) : (
               <IdlePanel me={state.me} busy={busy} onStart={() => void join()} />
             )}

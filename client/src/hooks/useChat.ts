@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { chatApi, type ChatMessage, type ChatState, type ChatStatus } from "@/lib/chatApi";
+import { chatApi, type ChatMessage, type ChatState, type ChatStatus, type RoomCardData } from "@/lib/chatApi";
 import { mergeUnconfirmedMessages } from "@/lib/chatState";
 
 const TOKEN_KEY = "selamchat.token";
@@ -77,6 +77,7 @@ export function useChat() {
   const [notice, setNotice] = useState<string | null>(null);
   const [waitSeconds, setWaitSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [lastRoomCard, setLastRoomCard] = useState<RoomCardData | null>(null);
 
   const tokenRef = useRef<string | null>(null);
   const statusRef = useRef<ChatStatus>("idle");
@@ -97,6 +98,7 @@ export function useChat() {
       previous.roomId !== null &&
       (next.status !== "chatting" || next.roomId !== previous.roomId)
     ) {
+      if (previous.roomCard) setLastRoomCard(previous.roomCard);
       endedRoomIdsRef.current.add(previous.roomId);
       if (endedRoomIdsRef.current.size > 100) {
         const oldest = endedRoomIdsRef.current.values().next().value;
@@ -111,6 +113,7 @@ export function useChat() {
     }
 
     const stateToApply = mergeUnconfirmedMessages(previous, next);
+    if (stateToApply.status === "chatting") setLastRoomCard(null);
 
     const safeState =
       stateToApply.status === "chatting"
@@ -341,6 +344,7 @@ export function useChat() {
     const lifecycle = ++lifecycleRef.current;
     setBusy(true);
     setNotice(null);
+    setLastRoomCard(null);
     try {
       const res = await chatApi.join(token, rotateAnimal);
       if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
@@ -359,6 +363,7 @@ export function useChat() {
     const returnToHome = rotateAnimal && previous?.status !== "chatting" && previous?.status !== "waiting";
     if (previous?.status === "chatting") {
       setNotice("Sohbeti bitirdin. Her şey silindi.");
+      if (previous.roomCard) setLastRoomCard(previous.roomCard);
     }
     if (previous?.roomId !== null && previous?.roomId !== undefined) {
       endedRoomIdsRef.current.add(previous.roomId);
@@ -389,6 +394,7 @@ export function useChat() {
           if (returnToHome) {
             lifecycleRef.current += 1;
             setNotice(null);
+            setLastRoomCard(null);
           }
           apply(res.state);
         }
@@ -491,6 +497,7 @@ export function useChat() {
   const returnHome = useCallback(() => {
     if (stateRef.current?.status === "idle") {
       setNotice(null);
+      setLastRoomCard(null);
       return;
     }
     void leave(true);
@@ -507,6 +514,7 @@ export function useChat() {
     connectionIssue,
     waitSeconds,
     noOneOnline,
+    lastRoomCard,
     join,
     leave,
     returnHome,
