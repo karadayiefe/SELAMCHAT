@@ -49,9 +49,8 @@ export type ChatResponse = {
 
 // Vercel apex domain is intentionally redirected to www. Use the canonical
 // API origin directly so a page opened on the apex never pays that extra hop.
-const apiOrigin = typeof window !== "undefined" && window.location.hostname === "selamchat.fun"
-  ? "https://www.selamchat.fun"
-  : "";
+const apiOrigin =
+  typeof window !== "undefined" && window.location.hostname === "selamchat.fun" ? "https://www.selamchat.fun" : "";
 
 async function post(path: string, body: Record<string, unknown>): Promise<ChatResponse> {
   const response = await fetch(`${apiOrigin}/api/chat/${path}`, {
@@ -71,11 +70,37 @@ async function post(path: string, body: Record<string, unknown>): Promise<ChatRe
 
 export const chatApi = {
   session: (token: string | null, avoidAnimalKey?: string | null) =>
-    post("session", { ...(token ? { token } : {}), ...(avoidAnimalKey ? { avoidAnimalKey } : {}) }),
+    post("session", {
+      ...(token ? { token } : {}),
+      ...(avoidAnimalKey ? { avoidAnimalKey } : {}),
+    }),
   state: (token: string) => post("state", { token }),
-  messages: (token: string) => post("messages", { token }),
+  messages: (token: string, visible = typeof document !== "undefined" && !document.hidden) =>
+    post("messages", { token, visible }),
   join: (token: string, rotateAnimal = false) => post("join", { token, rotateAnimal }),
   leave: (token: string) => post("leave", { token }),
   message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
   bye: (token: string) => post("bye", { token }),
+  pageExit: (token: string) => {
+    const url = `${apiOrigin}/api/chat/bye`;
+    const body = JSON.stringify({ token });
+    let queued = false;
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        queued = navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+      }
+    } catch {
+      /* Fall back to a keepalive request below. */
+    }
+    if (!queued && typeof fetch !== "undefined") {
+      void fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        credentials: "same-origin",
+        cache: "no-store",
+        keepalive: true,
+      }).catch(() => undefined);
+    }
+  },
 };

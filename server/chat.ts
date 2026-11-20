@@ -1,4 +1,4 @@
-import { and, asc, eq, getTableColumns, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, gt, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { randomInt } from "node:crypto";
 import { nanoid } from "nanoid";
@@ -26,6 +26,10 @@ export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
   return partnerIsHidden ? CHAT_BACKGROUND_TIMEOUT_SECONDS : CHAT_DISCONNECT_TIMEOUT_SECONDS;
+}
+
+export function canMarkMessageRead(clientVisible: boolean, serverHidden: boolean) {
+  return clientVisible && !serverHidden;
 }
 
 export function createRoomCode() {
@@ -189,8 +193,7 @@ function cleanBody(raw: unknown): string {
 
 export async function startSession(rawToken: unknown, rawAvoidAnimalKey?: unknown): Promise<ParticipantRow> {
   const d = await db();
-  const token =
-    typeof rawToken === "string" && rawToken.length >= 16 && rawToken.length <= 64 ? rawToken : null;
+  const token = typeof rawToken === "string" && rawToken.length >= 16 && rawToken.length <= 64 ? rawToken : null;
 
   if (token) {
     const existing = await d.select().from(participants).where(eq(participants.token, token)).limit(1);
@@ -215,11 +218,7 @@ export async function startSession(rawToken: unknown, rawAvoidAnimalKey?: unknow
     status: "idle",
   });
 
-  const [created] = await d
-    .select()
-    .from(participants)
-    .where(eq(participants.token, newToken))
-    .limit(1);
+  const [created] = await d.select().from(participants).where(eq(participants.token, newToken)).limit(1);
 
   return created;
 }
@@ -239,11 +238,7 @@ async function lockRoomParticipants(tx: Tx, roomId: number, includeParticipantId
   const roomFilter = includeParticipantId
     ? or(eq(participants.roomId, roomId), eq(participants.id, includeParticipantId))
     : eq(participants.roomId, roomId);
-  const query = tx
-    .select()
-    .from(participants)
-    .where(roomFilter)
-    .orderBy(asc(participants.id));
+  const query = tx.select().from(participants).where(roomFilter).orderBy(asc(participants.id));
   return lock ? query.for("update") : query;
 }
 
@@ -254,12 +249,7 @@ async function lockRoomParticipants(tx: Tx, roomId: number, includeParticipantId
  * A connection timeout marks both participants as connection-lost; deliberate
  * leaves still reset the leaver and notify only the other participant.
  */
-async function closeRoom(
-  tx: Tx,
-  roomId: number,
-  leavingId: number,
-  connectionLost = false
-): Promise<void> {
+async function closeRoom(tx: Tx, roomId: number, leavingId: number, connectionLost = false): Promise<void> {
   // Keep a single lock order across all close/send/state paths.
   await lockRoomParticipants(tx, roomId);
   const [room] = await tx.select().from(rooms).where(eq(rooms.id, roomId)).for("update").limit(1);
@@ -281,7 +271,12 @@ async function closeRoom(
     // Keep isHidden as a short-lived marker so later state reads distinguish a timeout from a deliberate leave.
     await tx
       .update(participants)
-      .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
+      .set({
+        status: "partner_left",
+        roomId: null,
+        queuedAt: null,
+        isHidden: true,
+      })
       .where(eq(participants.roomId, roomId));
     return;
   }
@@ -298,7 +293,12 @@ async function closeRoom(
   // Every still-present peer sees the exit notice; no second exit is required.
   await tx
     .update(participants)
-    .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: false })
+    .set({
+      status: "partner_left",
+      roomId: null,
+      queuedAt: null,
+      isHidden: false,
+    })
     .where(and(...otherSide));
 }
 
@@ -371,17 +371,10 @@ export async function joinQueue(token: string, rotateAnimal = false): Promise<vo
   if (me.status === "chatting" && me.roomId) return;
 
   const shouldSearch = await d.transaction(async tx => {
-    const [current] = await tx
-      .select()
-      .from(participants)
-      .where(eq(participants.id, me.id))
-      .for("update")
-      .limit(1);
+    const [current] = await tx.select().from(participants).where(eq(participants.id, me.id)).for("update").limit(1);
     if (!current || (current.status === "chatting" && current.roomId)) return false;
 
-    const nextAnimal = rotateAnimal && current.status !== "waiting"
-      ? chooseAnimal(current.animalKey)
-      : null;
+    const nextAnimal = rotateAnimal && current.status !== "waiting" ? chooseAnimal(current.animalKey) : null;
     await tx
       .update(participants)
       .set({
@@ -423,12 +416,7 @@ export async function leaveChat(token: string): Promise<void> {
             .where(or(eq(participants.roomId, snapshot.roomId), eq(participants.id, snapshot.id)))
             .orderBy(asc(participants.id))
             .for("update")
-        : await tx
-            .select()
-            .from(participants)
-            .where(eq(participants.id, snapshot.id))
-            .for("update")
-            .limit(1);
+        : await tx.select().from(participants).where(eq(participants.id, snapshot.id)).for("update").limit(1);
       const current = locked.find(row => row.id === snapshot.id);
       if (!current) return false;
 
@@ -463,12 +451,7 @@ export async function endSession(token: string): Promise<void> {
             .where(or(eq(participants.roomId, snapshot.roomId), eq(participants.id, snapshot.id)))
             .orderBy(asc(participants.id))
             .for("update")
-        : await tx
-            .select()
-            .from(participants)
-            .where(eq(participants.id, snapshot.id))
-            .for("update")
-            .limit(1);
+        : await tx.select().from(participants).where(eq(participants.id, snapshot.id)).for("update").limit(1);
       const current = locked.find(row => row.id === snapshot.id);
       if (!current) return false;
       if (current.roomId && current.roomId !== snapshot.roomId) return true;
@@ -503,9 +486,7 @@ export async function sendMessage(
 ): Promise<{ ok: boolean; error?: string }> {
   const body = cleanBody(rawBody);
   if (!body) return { ok: false, error: "empty_message" };
-  const clientId = typeof rawClientId === "string" && /^[A-Za-z0-9_-]{16,36}$/.test(rawClientId)
-    ? rawClientId
-    : null;
+  const clientId = typeof rawClientId === "string" && /^[A-Za-z0-9_-]{16,36}$/.test(rawClientId) ? rawClientId : null;
   if (!clientId) return { ok: false, error: "invalid_message_id" };
 
   const d = await db();
@@ -566,25 +547,50 @@ export async function sendMessage(
   return inserted === "sent" ? { ok: true } : { ok: false, error: "chat_closed" };
 }
 
-
 /** Visibility is a separate hint; hidden clients get the same 30-second lease. */
-export async function setVisibility(
-  token: string,
-  isHidden: boolean,
-  version: number
-): Promise<void> {
+export async function setVisibility(token: string, isHidden: boolean, version: number): Promise<void> {
   const d = await db();
-  // Do not clear the timeout marker before the returning client reads its reason.
-  await d
-    .update(participants)
-    .set({ isHidden, visibilityVersion: version, lastSeen: sql`NOW()` })
-    .where(
-      and(
-        eq(participants.token, token),
-        sql`${participants.visibilityVersion} < ${version}`,
-        ne(participants.status, "partner_left")
-      )
-    );
+  for (;;) {
+    const snapshot = await findByToken(d, token);
+    if (!snapshot) return;
+    const retry = await d.transaction(async tx => {
+      const locked = snapshot.roomId
+        ? await tx
+            .select()
+            .from(participants)
+            .where(or(eq(participants.roomId, snapshot.roomId), eq(participants.id, snapshot.id)))
+            .orderBy(asc(participants.id))
+            .for("update")
+        : await tx.select().from(participants).where(eq(participants.id, snapshot.id)).for("update").limit(1);
+      const current = locked.find(row => row.id === snapshot.id);
+      if (!current) return false;
+      if (current.roomId && current.roomId !== snapshot.roomId) return true;
+      if (current.status === "partner_left" || current.visibilityVersion >= version) return false;
+
+      // A hidden participant may resume only inside the server-owned 30-second lease.
+      // A visibility event arriving after expiry must never revive the old room.
+      if (!isHidden && current.status === "chatting" && current.roomId && current.isHidden) {
+        const [lease] = await tx
+          .select({
+            fresh: sql<number>`(${participants.lastSeen} > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})`,
+          })
+          .from(participants)
+          .where(eq(participants.id, current.id))
+          .limit(1);
+        if (!Number(lease?.fresh)) {
+          await closeRoom(tx, current.roomId, current.id, true);
+          return false;
+        }
+      }
+
+      await tx
+        .update(participants)
+        .set({ isHidden, visibilityVersion: version, lastSeen: sql`NOW()` })
+        .where(eq(participants.id, current.id));
+      return false;
+    });
+    if (!retry) return;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -642,28 +648,26 @@ export async function sweep(force = false): Promise<void> {
   }
 
   // Safety net: never keep messages of a closed room.
-  await d.execute(
-    sql`DELETE m FROM messages m JOIN rooms r ON r.id = m.roomId WHERE r.status = 'closed'`
-  );
+  await d.execute(sql`DELETE m FROM messages m JOIN rooms r ON r.id = m.roomId WHERE r.status = 'closed'`);
 
   // Forget visitors that are long gone (identity is re-assigned on return).
-  await d.delete(participants).where(
-    and(isNull(participants.roomId), sql`participants.lastSeen < ${nowSecondsAgo(600)}`)
-  );
+  await d
+    .delete(participants)
+    .where(and(isNull(participants.roomId), sql`participants.lastSeen < ${nowSecondsAgo(600)}`));
 }
 
 /* -------------------------------------------------------------------------- */
 /* State                                                                      */
 /* -------------------------------------------------------------------------- */
 
-let countersCache: { expiresAt: number; value: { online: number; activeChats: number } } | null = null;
+let countersCache: {
+  expiresAt: number;
+  value: { online: number; activeChats: number };
+} | null = null;
 
 async function readCounters(d: Db) {
   if (countersCache && countersCache.expiresAt > Date.now()) return countersCache.value;
-  const [onlineRow] = await d
-    .select({ total: sql<number>`COUNT(*)` })
-    .from(participants)
-    .where(sql`(
+  const [onlineRow] = await d.select({ total: sql<number>`COUNT(*)` }).from(participants).where(sql`(
       (participants.isHidden = 0 AND participants.lastSeen > ${nowSecondsAgo(CHAT_DISCONNECT_TIMEOUT_SECONDS)})
       OR (participants.isHidden = 1 AND participants.lastSeen > ${nowSecondsAgo(CHAT_BACKGROUND_TIMEOUT_SECONDS)})
     )`);
@@ -700,12 +704,7 @@ export async function getState(token: string): Promise<ChatState | null> {
   await d
     .update(participants)
     .set({ lastSeen: sql`NOW()` })
-    .where(
-      and(
-        eq(participants.id, me.id),
-        or(eq(participants.isHidden, false), ne(participants.status, "chatting"))
-      )
-    );
+    .where(and(eq(participants.id, me.id), or(eq(participants.isHidden, false), ne(participants.status, "chatting"))));
   me = (await findByToken(d, token)) ?? me;
 
   let status: ChatStatus = me.status === "partner_left" && me.isHidden ? "connection_lost" : me.status;
@@ -731,9 +730,12 @@ export async function getState(token: string): Promise<ChatState | null> {
           };
         }
         return {
-          status: current?.status === "partner_left"
-            ? (current.isHidden ? ("connection_lost" as const) : ("partner_left" as const))
-            : ("idle" as const),
+          status:
+            current?.status === "partner_left"
+              ? current.isHidden
+                ? ("connection_lost" as const)
+                : ("partner_left" as const)
+              : ("idle" as const),
           partner: null,
           roomCode: null,
           roomCard: null,
@@ -742,20 +744,69 @@ export async function getState(token: string): Promise<ChatState | null> {
         };
       }
 
-      const [room] = await tx
-        .select()
-        .from(rooms)
-        .where(eq(rooms.id, roomId))
+      const [currentLease] = await tx
+        .select({
+          fresh: sql<number>`(participants.lastSeen > ${nowSecondsAgo(getPartnerTimeoutSeconds(Boolean(current.isHidden)))})`,
+        })
+        .from(participants)
+        .where(eq(participants.id, current.id))
         .limit(1);
+      if (!Number(currentLease?.fresh)) {
+        const lockedAgain = await lockRoomParticipants(tx, roomId, me!.id);
+        const lockedCurrent = lockedAgain.find(row => row.id === me!.id);
+        const [freshLease] = lockedCurrent
+          ? await tx
+              .select({
+                fresh: sql<number>`(participants.lastSeen > ${nowSecondsAgo(getPartnerTimeoutSeconds(Boolean(lockedCurrent.isHidden)))})`,
+              })
+              .from(participants)
+              .where(eq(participants.id, lockedCurrent.id))
+              .for("update")
+              .limit(1)
+          : [];
+        if (lockedCurrent?.status === "chatting" && lockedCurrent.roomId === roomId && Number(freshLease?.fresh)) {
+          return {
+            status: "chatting" as const,
+            partner: null,
+            roomCode: null,
+            roomCard: null,
+            messages: [] as ChatMessage[],
+            retry: true,
+          };
+        }
+        await closeRoom(tx, roomId, current.id, true);
+        return {
+          status: "connection_lost" as const,
+          partner: null,
+          roomCode: null,
+          roomCard: null,
+          messages: [] as ChatMessage[],
+          retry: false,
+        };
+      }
+
+      const [room] = await tx.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
 
       if (!room || room.status !== "active") {
         await tx.update(rooms).set({ publicCode: null }).where(eq(rooms.id, roomId));
         await tx.delete(messages).where(eq(messages.roomId, roomId));
         await tx
           .update(participants)
-          .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
+          .set({
+            status: "partner_left",
+            roomId: null,
+            queuedAt: null,
+            isHidden: true,
+          })
           .where(eq(participants.roomId, roomId));
-        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        return {
+          status: "connection_lost" as const,
+          partner: null,
+          roomCode: null,
+          roomCard: null,
+          messages: [] as ChatMessage[],
+          retry: false,
+        };
       }
 
       let sharedCode = room.publicCode;
@@ -769,7 +820,14 @@ export async function getState(token: string): Promise<ChatState | null> {
         .map(identityOf);
       if (sharedAnimals.length !== 2) {
         await closeRoom(tx, roomId, current.id, true);
-        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        return {
+          status: "connection_lost" as const,
+          partner: null,
+          roomCode: null,
+          roomCard: null,
+          messages: [] as ChatMessage[],
+          retry: false,
+        };
       }
 
       const partnerRows = await tx
@@ -785,16 +843,21 @@ export async function getState(token: string): Promise<ChatState | null> {
       const partnerTimeoutSeconds = getPartnerTimeoutSeconds(Boolean(partnerRow?.isHidden));
       const partnerFresh = partnerRow
         ? Number(
-            partnerTimeoutSeconds === CHAT_BACKGROUND_TIMEOUT_SECONDS
-              ? partnerRow.freshHidden
-              : partnerRow.freshVisible
+            partnerTimeoutSeconds === CHAT_BACKGROUND_TIMEOUT_SECONDS ? partnerRow.freshHidden : partnerRow.freshVisible
           )
         : 0;
 
       if (!partnerRow || !partnerFresh) {
         // A timeout is reported separately from a deliberate leave on both sides.
         await closeRoom(tx, roomId, partnerRow?.id ?? -1, true);
-        return { status: "connection_lost" as const, partner: null, roomCode: null, roomCard: null, messages: [] as ChatMessage[], retry: false };
+        return {
+          status: "connection_lost" as const,
+          partner: null,
+          roomCode: null,
+          roomCard: null,
+          messages: [] as ChatMessage[],
+          retry: false,
+        };
       }
 
       const peerMessages = and(eq(messages.roomId, roomId), ne(messages.senderId, current.id));
@@ -867,7 +930,12 @@ export async function getState(token: string): Promise<ChatState | null> {
     // A chat without an active room is treated as ended, never restored.
     await d
       .update(participants)
-      .set({ status: "partner_left", roomId: null, queuedAt: null, isHidden: true })
+      .set({
+        status: "partner_left",
+        roomId: null,
+        queuedAt: null,
+        isHidden: true,
+      })
       .where(eq(participants.id, me.id));
     status = "connection_lost";
     me = (await findByToken(d, token)) ?? me;
@@ -895,56 +963,93 @@ export async function getState(token: string): Promise<ChatState | null> {
     roomCode: status === "chatting" ? roomCode : null,
     roomCard: status === "chatting" ? roomCard : null,
     me: identityOf(me),
-    partner: partner ? { animalKey: partner.animalKey, name: partner.name, emoji: partner.emoji, color: partner.color } : null,
+    partner: partner
+      ? {
+          animalKey: partner.animalKey,
+          name: partner.name,
+          emoji: partner.emoji,
+          color: partner.color,
+        }
+      : null,
     messages: rows,
     counters,
     serverTime: new Date().toISOString(),
   };
 }
 
-/**
- * Fast foreground read used between full lifecycle checks. It intentionally
- * avoids room locks, receipt writes and online counters so a message never
- * waits behind presence housekeeping.
- */
-export async function getMessages(token: string): Promise<ChatMessage[] | null> {
+/** Fast room read between full lifecycle checks; visible reads also heartbeat and write receipts. */
+export async function getMessages(token: string, clientVisible: boolean): Promise<ChatMessage[] | null> {
   const d = await db();
   const sender = alias(participants, "message_sender");
+  return d.transaction(async tx => {
+    const [current] = await tx
+      .select()
+      .from(participants)
+      .where(and(eq(participants.token, token), eq(participants.status, "chatting")))
+      .for("update")
+      .limit(1);
+    if (!current?.roomId) return null;
 
-  const rows = await d
-    .select({
-      id: messages.id,
-      clientId: messages.clientId,
-      body: messages.body,
-      senderId: messages.senderId,
-      meId: participants.id,
-      createdAt: messages.createdAt,
-      senderName: sender.displayName,
-      senderEmoji: sender.emoji,
-      senderColor: sender.color,
-      deliveredAt: messages.deliveredAt,
-      readAt: messages.readAt,
-    })
-    .from(participants)
-    .leftJoin(messages, eq(messages.roomId, participants.roomId))
-    .leftJoin(sender, eq(sender.id, messages.senderId))
-    .where(and(eq(participants.token, token), eq(participants.status, "chatting")))
-    .orderBy(asc(messages.id))
-    .limit(MAX_MESSAGES_PER_ROOM);
+    const visibleNow = canMarkMessageRead(clientVisible, current.isHidden);
+    if (visibleNow) {
+      // This fast endpoint is the frequent foreground heartbeat; hidden polling never extends the lease.
+      await tx
+        .update(participants)
+        .set({ lastSeen: sql`NOW()` })
+        .where(
+          and(eq(participants.id, current.id), lt(participants.lastSeen, sql`DATE_SUB(NOW(), INTERVAL 2 SECOND)`))
+        );
+    }
+    const peerMessages = and(eq(messages.roomId, current.roomId), ne(messages.senderId, current.id));
+    if (visibleNow) {
+      await tx
+        .update(messages)
+        .set({
+          deliveredAt: sql`COALESCE(${messages.deliveredAt}, NOW())`,
+          readAt: sql`COALESCE(${messages.readAt}, NOW())`,
+        })
+        .where(and(peerMessages, or(isNull(messages.deliveredAt), isNull(messages.readAt))));
+    } else {
+      await tx
+        .update(messages)
+        .set({ deliveredAt: sql`COALESCE(${messages.deliveredAt}, NOW())` })
+        .where(and(peerMessages, isNull(messages.deliveredAt)));
+    }
 
-  const messageRows = rows.filter(row => row.id !== null);
-  if (rows.length === 0) return null;
+    const rows = await tx
+      .select({
+        id: messages.id,
+        clientId: messages.clientId,
+        body: messages.body,
+        senderId: messages.senderId,
+        meId: participants.id,
+        createdAt: messages.createdAt,
+        senderName: sender.displayName,
+        senderEmoji: sender.emoji,
+        senderColor: sender.color,
+        deliveredAt: messages.deliveredAt,
+        readAt: messages.readAt,
+      })
+      .from(participants)
+      .leftJoin(messages, eq(messages.roomId, participants.roomId))
+      .leftJoin(sender, eq(sender.id, messages.senderId))
+      .where(and(eq(participants.id, current.id), eq(participants.status, "chatting")))
+      .orderBy(asc(messages.id))
+      .limit(MAX_MESSAGES_PER_ROOM);
 
-  return messageRows.map(row => ({
-    id: row.id as number,
-    clientId: row.clientId,
-    body: row.body ?? "",
-    mine: row.senderId === row.meId,
-    senderName: row.senderName ?? "",
-    senderEmoji: row.senderEmoji ?? "",
-    senderColor: row.senderColor ?? "",
-    createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
-    deliveredAt: row.deliveredAt?.toISOString() ?? null,
-    readAt: row.readAt?.toISOString() ?? null,
-  }));
+    return rows
+      .filter(row => row.id !== null)
+      .map(row => ({
+        id: row.id as number,
+        clientId: row.clientId,
+        body: row.body ?? "",
+        mine: row.senderId === row.meId,
+        senderName: row.senderName ?? "",
+        senderEmoji: row.senderEmoji ?? "",
+        senderColor: row.senderColor ?? "",
+        createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+        deliveredAt: row.deliveredAt?.toISOString() ?? null,
+        readAt: row.readAt?.toISOString() ?? null,
+      }));
+  });
 }

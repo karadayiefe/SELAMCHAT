@@ -5,6 +5,7 @@ import {
   CHAT_DISCONNECT_TIMEOUT_SECONDS,
   QUEUE_WINDOW_SECONDS,
   chooseAnimal,
+  canMarkMessageRead,
   createRoomCode,
   getPartnerTimeoutSeconds,
 } from "./chat.js";
@@ -16,6 +17,13 @@ describe("anonymous chat configuration", () => {
     expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
     expect(getPartnerTimeoutSeconds(false)).toBe(30);
     expect(getPartnerTimeoutSeconds(true)).toBe(30);
+  });
+
+  it("marks messages read only when the client and server both report visible", () => {
+    expect(canMarkMessageRead(true, false)).toBe(true);
+    expect(canMarkMessageRead(false, false)).toBe(false);
+    expect(canMarkMessageRead(true, true)).toBe(false);
+    expect(canMarkMessageRead(false, true)).toBe(false);
   });
 
   it("assigns a different animal when the previous identity is excluded", () => {
