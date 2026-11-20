@@ -84,11 +84,10 @@ export function ChatPanel({
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stickToBottomRef = useRef(true);
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (element && stickToBottomRef.current) element.scrollTop = element.scrollHeight;
+    if (element) element.scrollTop = element.scrollHeight;
   }, [messages.length, partnerTyping]);
 
   useEffect(() => {
@@ -98,12 +97,25 @@ export function ChatPanel({
     element.style.height = `${Math.min(element.scrollHeight, 88)}px`;
   }, [text]);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const keepComposerVisible = () => {
+      if (document.activeElement !== inputRef.current) return;
+      window.requestAnimationFrame(() => inputRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" }));
+    };
+    viewport.addEventListener("resize", keepComposerVisible);
+    return () => {
+      viewport.removeEventListener("resize", keepComposerVisible);
+    };
+  }, []);
+
   const submit = async () => {
     const value = text.trim();
     if (!value) return;
     setText("");
     await onSend(value);
-    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.focus();
   };
 
   return (
@@ -134,15 +146,7 @@ export function ChatPanel({
         </div>
       </header>
 
-      <div
-        className="chat-scroll"
-        ref={scrollRef}
-        onScroll={event => {
-          const element = event.currentTarget;
-          const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-          stickToBottomRef.current = distanceFromBottom < 72;
-        }}
-      >
+      <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 && (
           <div className="m-auto max-w-[22rem] py-6 text-center">
             <p className="text-sm leading-relaxed text-[color:var(--text-dim)]">
