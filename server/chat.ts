@@ -573,12 +573,9 @@ export async function sendMessage(
   return inserted === "sent" ? { ok: true } : { ok: false, error: "chat_closed" };
 }
 
-export async function setTyping(token: string): Promise<void> {
-  const d = await db();
-  await d
-    .update(participants)
-    .set({ typingAt: sql`NOW()`, lastSeen: sql`NOW()` })
-    .where(and(eq(participants.token, token), eq(participants.status, "chatting"), sql`${participants.roomId} IS NOT NULL`));
+export async function setTyping(_token: string): Promise<void> {
+  // Typing is rendered locally in the composer. Never write it to the
+  // database: a presence write must not contend with message delivery.
 }
 
 /** Visibility is a separate hint; hidden clients get the same 30-second lease. */
