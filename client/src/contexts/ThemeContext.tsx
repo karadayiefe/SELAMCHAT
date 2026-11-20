@@ -52,6 +52,7 @@ export function ThemeProvider({
   });
   const catAudioRef = useRef<HTMLAudioElement | null>(null);
   const viceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previousThemeRef = useRef<Theme>(theme);
   const [viceMusicPlaying, setViceMusicPlaying] = useState(false);
 
   useEffect(() => {
@@ -137,7 +138,15 @@ export function ThemeProvider({
   const toggleTheme = switchable
     ? () => setTheme(previous => (previous === "light" ? "dark" : "light"))
     : undefined;
-  const toggleCatMode = () => setIsCatMode(previous => !previous);
+  const toggleCatMode = () => {
+    if (isCatMode) {
+      setIsCatMode(false);
+      setTheme(previousThemeRef.current);
+      return;
+    }
+    previousThemeRef.current = theme;
+    setIsCatMode(true);
+  };
   const toggleCatSound = () => {
     setCatSoundEnabled(previous => {
       const next = !previous;

@@ -12,7 +12,7 @@ import {
 const options: { id: Theme; label: string; description: string; logo: string }[] = [
   { id: "dark", label: "Koyu", description: "", logo: "/logo-dark-button.svg" },
   { id: "light", label: "Açık", description: "", logo: "/logo-light-button.svg" },
-  { id: "vice-city", label: "GTA 6 · VICE CITY", description: "Neon palmiyeler ve gün batımı", logo: "/logo-vice-city-button.svg" },
+  { id: "vice-city", label: "GTA 6 · VICE CITY", description: "Neon palmiyeler ve gün batımı", logo: "/logo-vice-city.jpg" },
 ];
 
 export function ThemeSettings() {

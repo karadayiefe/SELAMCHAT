@@ -9,6 +9,7 @@ import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TimelinePanel } from "@/pages/Changelog";
+import { CatRain } from "@/components/chat/CatRain";
 import { useState } from "react";
 
 export default function Home() {
@@ -39,6 +40,7 @@ export default function Home() {
 
   return (
     <div className="page-shell">
+      {isCatMode && <CatRain />}
       <header className="site-header">
         <Wordmark />
         <div className="header-actions">
@@ -111,7 +113,7 @@ export default function Home() {
           aria-pressed={isCatMode}
           title={isCatMode ? "Kedi modunu kapat" : "Gizli kedi modunu aç"}
         >
-          SELAMCHAT
+          {isCatMode ? "Gizli temayı kapat" : "SELAMCHAT"}
         </button>
         <span aria-hidden="true">·</span>
         <span>Mesajlar saklanmaz, sohbet bitince silinir</span>
