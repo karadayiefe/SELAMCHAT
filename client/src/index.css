@@ -790,6 +790,13 @@
     background: rgba(255, 255, 255, 0.015);
   }
 
+  .chat-typing-status {
+    color: var(--lime);
+    font-weight: 700;
+    white-space: nowrap;
+    animation: typing-status-in 180ms ease-out both;
+  }
+
   @media (max-width: 420px) {
     .chat-head { gap: 0.35rem; padding: 0.7rem 0.65rem; }
     .chat-head-actions { gap: 0.3rem; }
@@ -1654,6 +1661,11 @@
   @keyframes receipt-pop {
     from { opacity: 0.35; transform: scale(0.82); }
     to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes typing-status-in {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes counter-pop {

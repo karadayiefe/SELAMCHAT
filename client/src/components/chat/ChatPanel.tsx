@@ -88,7 +88,7 @@ export function ChatPanel({
   useEffect(() => {
     const element = scrollRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [messages.length, partnerTyping]);
+  }, [messages.length]);
 
   useEffect(() => {
     const element = inputRef.current;
@@ -118,6 +118,9 @@ export function ChatPanel({
     inputRef.current?.focus();
   };
 
+  const localTyping = text.trim().length > 0;
+  const showTypingStatus = localTyping || partnerTyping;
+
   return (
     <section className="chat-shell fade-up">
       <header className="chat-head">
@@ -133,6 +136,9 @@ export function ChatPanel({
             <span className="flex items-center gap-1.5 text-[0.68rem] text-[color:var(--text-dim)]">
               <span className="live-dot" style={{ width: 5, height: 5 }} aria-hidden="true" />
               çevrimiçi · anonim sohbet
+              {showTypingStatus && (
+                <span className="chat-typing-status" aria-live="polite">· yazıyor</span>
+              )}
             </span>
           </div>
         </div>
@@ -163,28 +169,6 @@ export function ChatPanel({
           />
         ))}
 
-        {partnerTyping && (
-          <div className="bubble-row bubble-row--theirs">
-            <span className="bubble-meta" style={{ color: partner.color }}>
-              <span aria-hidden="true">{partner.emoji}</span>
-              {partner.name}
-            </span>
-            <span
-              className="bubble typing-dots"
-              style={{
-                background: "rgba(255,255,255,0.045)",
-                borderColor: `${partner.color}33`,
-                color: partner.color,
-                padding: "0.6rem 0.8rem",
-              }}
-              aria-label={`${partner.name} yazıyor`}
-            >
-              <span />
-              <span />
-              <span />
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="composer">
