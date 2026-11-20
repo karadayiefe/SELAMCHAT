@@ -38,7 +38,7 @@ export function LeftPanel({
 
       <button type="button" className="btn btn-primary mt-6 w-full" onClick={onFindNew} disabled={busy}>
         <RotateCw size={16} strokeWidth={2.4} aria-hidden="true" />
-        {busy ? "Aranıyor…" : "Yeni kişi bul"}
+        {busy ? "Ana sayfaya dönülüyor…" : "Yeni kişi bul"}
       </button>
 
       <div className="mt-4 flex items-center gap-2 text-xs text-[color:var(--text-dim)]">

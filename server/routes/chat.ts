@@ -115,7 +115,8 @@ export function registerChatRoutes(app: Express) {
     respond(req, res, async () => {
       const token = readToken(req);
       if (!token) return { ok: false, error: "no_token" };
-      await leaveChat(token);
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      await leaveChat(token, body.rotateAnimal === true);
       const state = await getState(token);
       if (!state) return { ok: false, error: "no_session" };
       return { ok: true, state };

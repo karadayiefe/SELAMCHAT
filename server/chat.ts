@@ -405,7 +405,7 @@ export async function joinQueue(token: string, rotateAnimal = false): Promise<vo
   if (shouldSearch) await tryMatch(d, me.id);
 }
 
-export async function leaveChat(token: string): Promise<void> {
+export async function leaveChat(token: string, rotateAnimal = false): Promise<void> {
   const d = await db();
   for (;;) {
     const snapshot = await findByToken(d, token);
@@ -436,9 +436,25 @@ export async function leaveChat(token: string): Promise<void> {
       if (current.roomId && current.roomId !== snapshot.roomId) return true;
 
       if (current.roomId) await closeRoom(tx, current.roomId, current.id);
+      const nextAnimal = rotateAnimal && current.status !== "waiting"
+        ? chooseAnimal(current.animalKey)
+        : null;
       await tx
         .update(participants)
-        .set({ status: "idle", roomId: null, queuedAt: null, isHidden: false })
+        .set({
+          ...(nextAnimal
+            ? {
+                animalKey: nextAnimal.key,
+                displayName: nextAnimal.name,
+                emoji: nextAnimal.emoji,
+                color: nextAnimal.color,
+              }
+            : {}),
+          status: "idle",
+          roomId: null,
+          queuedAt: null,
+          isHidden: false,
+        })
         .where(eq(participants.id, current.id));
       return false;
     });

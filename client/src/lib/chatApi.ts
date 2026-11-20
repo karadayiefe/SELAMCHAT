@@ -77,7 +77,7 @@ export const chatApi = {
   state: (token: string) => post("state", { token }),
   messages: (token: string) => post("messages", { token }),
   join: (token: string, rotateAnimal = false) => post("join", { token, rotateAnimal }),
-  leave: (token: string) => post("leave", { token }),
+  leave: (token: string, rotateAnimal = false) => post("leave", { token, rotateAnimal }),
   message: (token: string, body: string, clientId: string) => post("message", { token, body, clientId }),
   bye: (token: string) => post("bye", { token }),
 };

@@ -334,20 +334,21 @@ export function useChat() {
     }
   }, [apply]);
 
-  const leave = useCallback(async () => {
+  const leave = useCallback(async (rotateAnimal = false) => {
     const token = tokenRef.current;
     if (!token) return;
     const lifecycle = ++lifecycleRef.current;
     const previous = stateRef.current;
+    const returnToHome = rotateAnimal && previous?.status !== "chatting" && previous?.status !== "waiting";
     if (previous?.status === "chatting") {
       setNotice("Sohbeti bitirdin. Her şey silindi.");
     }
     if (previous?.roomId !== null && previous?.roomId !== undefined) {
       endedRoomIdsRef.current.add(previous.roomId);
     }
-    statusRef.current = "idle";
+    if (!returnToHome) statusRef.current = "idle";
     try { sessionStorage.removeItem(RELOAD_MATCH_KEY); } catch { /* Storage can be unavailable. */ }
-    if (previous) {
+    if (previous && !returnToHome) {
       const cleared: ChatState = {
         ...previous,
         status: "idle",
@@ -363,8 +364,14 @@ export function useChat() {
     }
     setBusy(true);
     try {
-      const res = await chatApi.leave(token);
-      if (lifecycle === lifecycleRef.current && res.ok) apply(res.state);
+      const res = await chatApi.leave(token, rotateAnimal);
+      if (lifecycle === lifecycleRef.current && res.ok) {
+        if (returnToHome) {
+          lifecycleRef.current += 1;
+          setNotice(null);
+        }
+        apply(res.state);
+      }
     } catch {
       setConnectionIssue(true);
     } finally {
