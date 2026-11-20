@@ -54,7 +54,6 @@ export function useChat() {
   const stateRef = useRef<ChatState | null>(null);
   const endedRoomIdsRef = useRef(new Set<number>());
   const lifecycleRef = useRef(0);
-  const typingSentAt = useRef(0);
   const waitStartedAt = useRef<number | null>(null);
   const optimisticIdRef = useRef(0);
 
@@ -442,15 +441,6 @@ export function useChat() {
     [apply]
   );
 
-  const notifyTyping = useCallback(() => {
-    const token = tokenRef.current;
-    if (!token || statusRef.current !== "chatting") return;
-    const now = Date.now();
-    if (now - typingSentAt.current < 2500) return;
-    typingSentAt.current = now;
-    void chatApi.typing(token).catch(() => undefined);
-  }, []);
-
   const noOneOnline = state?.status === "waiting" && waitSeconds >= NO_ONE_AFTER_SECONDS;
 
   return {
@@ -464,6 +454,5 @@ export function useChat() {
     join,
     leave,
     send,
-    notifyTyping,
   };
 }

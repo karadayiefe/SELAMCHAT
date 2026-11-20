@@ -575,12 +575,10 @@ export async function sendMessage(
 
 export async function setTyping(token: string): Promise<void> {
   const d = await db();
-  const me = await findByToken(d, token);
-  if (!me || me.status !== "chatting" || !me.roomId) return;
   await d
     .update(participants)
     .set({ typingAt: sql`NOW()`, lastSeen: sql`NOW()` })
-    .where(eq(participants.id, me.id));
+    .where(and(eq(participants.token, token), eq(participants.status, "chatting"), sql`${participants.roomId} IS NOT NULL`));
 }
 
 /** Visibility is a separate hint; hidden clients get the same 30-second lease. */

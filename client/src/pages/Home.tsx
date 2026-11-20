@@ -23,7 +23,6 @@ export default function Home() {
     join,
     leave,
     send,
-    notifyTyping,
   } = useChat();
 
   const status = state?.status ?? "idle";
@@ -78,11 +77,9 @@ export default function Home() {
                 partner={state.partner}
                 roomCard={state.roomCard}
                 messages={state.messages}
-                partnerTyping={state.partnerTyping}
                 busy={busy}
                 onSend={send}
                 onLeave={() => void leave()}
-                onTyping={notifyTyping}
               />
             ) : status === "waiting" ? (
               <WaitingPanel

@@ -62,21 +62,17 @@ export function ChatPanel({
   partner,
   roomCard,
   messages,
-  partnerTyping,
   busy,
   onSend,
   onLeave,
-  onTyping,
 }: {
   me: Identity;
   partner: Identity;
   roomCard: RoomCardData | null;
   messages: ChatMessage[];
-  partnerTyping: boolean;
   busy: boolean;
   onSend: (body: string, clientId?: string) => Promise<boolean>;
   onLeave: () => void;
-  onTyping: () => void;
 }) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -116,7 +112,7 @@ export function ChatPanel({
   };
 
   const localTyping = text.trim().length > 0;
-  const showTypingStatus = localTyping || partnerTyping;
+  const showTypingStatus = localTyping;
 
   return (
     <section className="chat-shell fade-up">
@@ -181,7 +177,6 @@ export function ChatPanel({
           aria-label="Mesaj"
           onChange={event => {
             setText(event.target.value);
-            onTyping();
           }}
           onKeyDown={event => {
             if (event.key === "Enter" && !event.shiftKey) {
