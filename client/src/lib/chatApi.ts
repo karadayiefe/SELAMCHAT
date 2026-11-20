@@ -48,8 +48,14 @@ export type ChatResponse = {
   messages?: ChatMessage[];
 };
 
+// Vercel apex domain is intentionally redirected to www. Use the canonical
+// API origin directly so a page opened on the apex never pays that extra hop.
+const apiOrigin = typeof window !== "undefined" && window.location.hostname === "selamchat.fun"
+  ? "https://www.selamchat.fun"
+  : "";
+
 async function post(path: string, body: Record<string, unknown>): Promise<ChatResponse> {
-  const response = await fetch(`/api/chat/${path}`, {
+  const response = await fetch(`${apiOrigin}/api/chat/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

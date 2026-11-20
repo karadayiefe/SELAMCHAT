@@ -1834,5 +1834,10 @@
     .changelog-entry { padding: 0.95rem 0.9rem 1rem; }
     .changelog-entry-meta { align-items: flex-start; }
     .timeline-vice-actions { flex-wrap: wrap; }
+    .changelog-dialog-scroll {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .changelog-dialog-scroll::-webkit-scrollbar { display: none; }
   }
 }

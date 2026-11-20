@@ -1,4 +1,5 @@
 import { and, asc, eq, getTableColumns, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 import { randomInt } from "node:crypto";
 import { nanoid } from "nanoid";
 import { messages, participants, rooms } from "../drizzle/schema.js";
@@ -511,21 +512,18 @@ export async function sendMessage(
   if (!clientId) return { ok: false, error: "invalid_message_id" };
 
   const d = await db();
-  const me = await findByToken(d, token);
-  if (!me) return { ok: false, error: "no_session" };
-  if (me.status !== "chatting" || !me.roomId) return { ok: false, error: "not_in_chat" };
-
-  const roomId = me.roomId;
   const inserted = await d.transaction(async tx => {
     // Sending only needs to serialize the sender's lifecycle row. Locking the
     // partner too made every message wait behind unrelated presence updates.
     const [current] = await tx
       .select()
       .from(participants)
-      .where(and(eq(participants.id, me.id), eq(participants.roomId, roomId), eq(participants.status, "chatting")))
+      .where(and(eq(participants.token, token), eq(participants.status, "chatting")))
       .for("update")
       .limit(1);
-    if (!current) return false;
+    if (!current || !current.roomId) return false;
+
+    const roomId = current.roomId;
 
     const [room] = await tx
       .select()
@@ -538,19 +536,19 @@ export async function sendMessage(
       await tx
         .update(participants)
         .set({ status: "partner_left", roomId: null, queuedAt: null, typingAt: null })
-        .where(and(eq(participants.id, me.id), eq(participants.roomId, roomId)));
+        .where(and(eq(participants.id, current.id), eq(participants.roomId, roomId)));
       return false;
     }
 
     const duplicate = await tx
       .select({ id: messages.id })
       .from(messages)
-      .where(and(eq(messages.senderId, me.id), eq(messages.clientId, clientId)))
+      .where(and(eq(messages.senderId, current.id), eq(messages.clientId, clientId)))
       .limit(1);
     if (duplicate.length > 0) return "sent" as const;
     if (!allowMessage(token)) return "too_fast" as const;
 
-    const insertedMessage = await tx.insert(messages).values({ roomId, senderId: me.id, clientId, body });
+    const insertedMessage = await tx.insert(messages).values({ roomId, senderId: current.id, clientId, body });
     await tx
       .update(rooms)
       .set({ lastActivity: sql`NOW()` })
@@ -558,7 +556,7 @@ export async function sendMessage(
     await tx
       .update(participants)
       .set({ typingAt: null, lastSeen: sql`NOW()` })
-      .where(eq(participants.id, me.id));
+      .where(eq(participants.id, current.id));
 
     // Keep a single room bounded; older rows of the live room are dropped too.
     // Prune periodically instead of making every message wait for a nested delete.
@@ -932,9 +930,7 @@ export async function getState(token: string): Promise<ChatState | null> {
  */
 export async function getMessages(token: string): Promise<ChatMessage[] | null> {
   const d = await db();
-  const me = await findByToken(d, token);
-  if (!me) return null;
-  if (me.status !== "chatting" || !me.roomId) return [];
+  const sender = alias(participants, "message_sender");
 
   const rows = await d
     .select({
@@ -942,28 +938,33 @@ export async function getMessages(token: string): Promise<ChatMessage[] | null> 
       clientId: messages.clientId,
       body: messages.body,
       senderId: messages.senderId,
+      meId: participants.id,
       createdAt: messages.createdAt,
-      senderName: participants.displayName,
-      senderEmoji: participants.emoji,
-      senderColor: participants.color,
+      senderName: sender.displayName,
+      senderEmoji: sender.emoji,
+      senderColor: sender.color,
       deliveredAt: messages.deliveredAt,
       readAt: messages.readAt,
     })
-    .from(messages)
-    .innerJoin(participants, eq(participants.id, messages.senderId))
-    .where(eq(messages.roomId, me.roomId))
+    .from(participants)
+    .leftJoin(messages, eq(messages.roomId, participants.roomId))
+    .leftJoin(sender, eq(sender.id, messages.senderId))
+    .where(and(eq(participants.token, token), eq(participants.status, "chatting")))
     .orderBy(asc(messages.id))
     .limit(MAX_MESSAGES_PER_ROOM);
 
-  return rows.map(row => ({
-    id: row.id,
+  const messageRows = rows.filter(row => row.id !== null);
+  if (rows.length === 0) return null;
+
+  return messageRows.map(row => ({
+    id: row.id as number,
     clientId: row.clientId,
-    body: row.body,
-    mine: row.senderId === me.id,
-    senderName: row.senderName,
-    senderEmoji: row.senderEmoji,
-    senderColor: row.senderColor,
-    createdAt: row.createdAt.toISOString(),
+    body: row.body ?? "",
+    mine: row.senderId === row.meId,
+    senderName: row.senderName ?? "",
+    senderEmoji: row.senderEmoji ?? "",
+    senderColor: row.senderColor ?? "",
+    createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
     deliveredAt: row.deliveredAt?.toISOString() ?? null,
     readAt: row.readAt?.toISOString() ?? null,
   }));
