@@ -2,7 +2,7 @@ import type { Identity } from "@/lib/chatApi";
 
 export function Wordmark() {
   return (
-    <div>
+    <a className="wordmark-link" href="/" aria-label="SELAMCHAT ana sayfa">
       <div className="wordmark">
         <span className="wordmark-mark" aria-hidden="true">
           <img className="wordmark-logo wordmark-logo--dark" src="/logo-dark.svg" alt="" />
@@ -14,7 +14,7 @@ export function Wordmark() {
           SELAM<span className="wordmark-accent">CHAT</span>
         </span>
       </div>
-    </div>
+    </a>
   );
 }
 
