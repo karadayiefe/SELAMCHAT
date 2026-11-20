@@ -121,7 +121,6 @@ export function useChat() {
       const isReload = navigationType?.type === "reload";
       rejoinAfterReload = isReload && sessionStorage.getItem(RELOAD_MATCH_KEY) === "1";
       sessionStorage.removeItem(RELOAD_MATCH_KEY);
-      if (isReload) sessionStorage.removeItem(TOKEN_KEY);
     } catch { /* A fresh identity is best-effort when storage is blocked. */ }
 
     const sleep = (ms: number) =>
@@ -285,7 +284,8 @@ export function useChat() {
     if (state?.status === "chatting" || state?.status === "waiting") setNotice(null);
   }, [state?.status]);
 
-  // pagehide is the exit signal; visibilitychange only updates hidden/visible presence.
+  // Keep the tab token across reloads. The server lease handles real tab exits;
+  // deleting the token here made every rapid F5 look like a new visitor.
   useEffect(() => {
     const bye = (event: PageTransitionEvent) => {
       if (event.persisted) return;
@@ -296,23 +296,7 @@ export function useChat() {
       try {
         if (stateRef.current?.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
         else sessionStorage.removeItem(RELOAD_MATCH_KEY);
-        sessionStorage.removeItem(TOKEN_KEY);
       } catch { /* Exit notification is still attempted without storage. */ }
-      const body = JSON.stringify({ token });
-      const payload = new Blob([body], { type: "application/json" });
-      let queued = false;
-      try {
-        if (typeof navigator.sendBeacon === "function") queued = navigator.sendBeacon("/api/chat/bye", payload);
-      } catch { /* Fall through to a keepalive fetch. */ }
-      if (!queued) {
-        void fetch("/api/chat/bye", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body,
-          credentials: "same-origin",
-          keepalive: true,
-        }).catch(() => undefined);
-      }
     };
 
     window.addEventListener("pagehide", bye);

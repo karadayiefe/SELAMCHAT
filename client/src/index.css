@@ -564,8 +564,19 @@
   }
 
   .counter-number {
+    display: inline-flex;
+    min-width: 1.05em;
+    overflow: hidden;
+    line-height: 1.15;
+    perspective: 90px;
+  }
+
+  .counter-digit {
     display: inline-block;
-    animation: counter-pop 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    min-width: 0.58em;
+    text-align: center;
+    transform-origin: 50% 100%;
+    animation: counter-wheel 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .live-dot {
@@ -1581,6 +1592,24 @@
     }
   }
 
+  @keyframes counter-wheel {
+    0% {
+      opacity: 0;
+      transform: translateY(-0.8em) rotateX(-72deg) scale(0.78);
+      filter: blur(1px);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(0.08em) rotateX(12deg) scale(1.04);
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) rotateX(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
   @keyframes dot-bounce {
     0%,
     60%,
@@ -1632,6 +1661,7 @@
     .state-panel-enter,
     .typing-dots span,
     .counter-number,
+    .counter-digit,
     .message-receipt,
     .cat-rain-cat {
       animation: none !important;

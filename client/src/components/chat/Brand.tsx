@@ -18,22 +18,29 @@ export function Wordmark() {
   );
 }
 
+function AnimatedCounter({ value }: { value: number }) {
+  const text = String(Math.max(0, value));
+  return (
+    <b className="counter-number" aria-label={text}>
+      {text.split("").map((digit, index) => (
+        <span className="counter-digit" key={`${index}-${digit}-${text}`} aria-hidden="true">{digit}</span>
+      ))}
+    </b>
+  );
+}
+
 export function LiveCounters({ online, activeChats }: { online: number; activeChats: number }) {
   return (
     <div className="counters" aria-live="polite" aria-atomic="true">
       <span className="counter-pill" title="Şu anda sitede olan kişi sayısı">
         <span className="live-dot" aria-hidden="true" />
         Canlı Bağlantı:{" "}
-        <b key={online} className="counter-number">
-          {online}
-        </b>
+        <AnimatedCounter value={online} />
       </span>
       <span className="counter-pill" title="Şu anda süren sohbet odası sayısı">
         <span className="live-dot live-dot--chat" aria-hidden="true" />
         Aktif Sohbet:{" "}
-        <b key={activeChats} className="counter-number">
-          {activeChats}
-        </b>
+        <AnimatedCounter value={activeChats} />
       </span>
     </div>
   );
