@@ -90,7 +90,7 @@ export function useChat() {
     statusRef.current = safeState.status;
     meRef.current = safeState.me;
     try {
-      // Kept per tab while this document is alive; pagehide rotates the token.
+      // Keep the same token in this tab so a reload is not counted as a new visitor.
       sessionStorage.setItem(TOKEN_KEY, safeState.token);
       sessionStorage.setItem(ANIMAL_KEY, safeState.me.animalKey);
       if (safeState.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
@@ -296,7 +296,7 @@ export function useChat() {
       try {
         if (stateRef.current?.status === "chatting") sessionStorage.setItem(RELOAD_MATCH_KEY, "1");
         else sessionStorage.removeItem(RELOAD_MATCH_KEY);
-      } catch { /* Exit notification is still attempted without storage. */ }
+      } catch { /* Reload continuity is best-effort when storage is blocked. */ }
     };
 
     window.addEventListener("pagehide", bye);

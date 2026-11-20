@@ -10,11 +10,11 @@ import {
 } from "./chat.js";
 
 describe("anonymous chat configuration", () => {
-  it("keeps the search window, visible heartbeat fallback and hidden lease separate", () => {
+  it("uses a 30-second lease for visible and hidden presence", () => {
     expect(QUEUE_WINDOW_SECONDS).toBe(30);
-    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(60);
+    expect(CHAT_DISCONNECT_TIMEOUT_SECONDS).toBe(30);
     expect(CHAT_BACKGROUND_TIMEOUT_SECONDS).toBe(30);
-    expect(getPartnerTimeoutSeconds(false)).toBe(60);
+    expect(getPartnerTimeoutSeconds(false)).toBe(30);
     expect(getPartnerTimeoutSeconds(true)).toBe(30);
   });
 

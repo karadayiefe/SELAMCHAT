@@ -10,17 +10,17 @@ import { getDb } from "./db.js";
  * Design notes:
  * - No accounts, no profiles. A visitor is a row with a random animal identity
  *   and a secret token kept in the browser.
- * - Presence is a visibility-aware lease (`lastSeen`). Hidden tabs receive a
- *   60-second grace; hidden polls do not extend that away timer.
- * - Messages live only while a room is active. Button/pagehide exits close and
- *   delete immediately; a lost connection is cleaned after its lease expires.
+ * - Presence is a visibility-aware 30-second lease (`lastSeen`). Hidden polls
+ *   do not extend that away timer.
+ * - Messages live only while a room is active. Button exits close and delete
+ *   immediately; a lost page connection is cleaned after its lease expires.
  */
 
 /** Waiting users have up to 30 seconds to establish a match. */
 export const QUEUE_WINDOW_SECONDS = 30;
-/** Fallback for a foreground client that stops heartbeating; healthy visible chats have no duration limit. */
-export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 60;
-/** Hidden tabs and locked screens expire after 30 seconds away. */
+/** A foreground client that stops heartbeating is disconnected after 30 seconds. */
+export const CHAT_DISCONNECT_TIMEOUT_SECONDS = 30;
+/** Hidden tabs and locked screens use the same 30-second away lease. */
 export const CHAT_BACKGROUND_TIMEOUT_SECONDS = 30;
 
 export function getPartnerTimeoutSeconds(partnerIsHidden: boolean) {
@@ -588,7 +588,7 @@ export async function setTyping(token: string): Promise<void> {
     .where(eq(participants.id, me.id));
 }
 
-/** Visibility is a separate hint; hidden clients get one minute before their room is closed. */
+/** Visibility is a separate hint; hidden clients get the same 30-second lease. */
 export async function setVisibility(
   token: string,
   isHidden: boolean,
