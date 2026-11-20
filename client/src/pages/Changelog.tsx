@@ -25,9 +25,9 @@ export const changes: ChangelogCard[] = [
   {
     id: "cat-easter-egg",
     date: "18.11.2026 · 21:31",
-    title: "KEDİ SAKLADIK AMK. (CİDDİ.)",
+    title: "GİZLİ KEDİ TEMASI!",
     description: "SELAMCHAT'in içine gizli bir kedi teması ve ona özel bir müzik sakladık.",
-    details: ["Bir yerlere tıklayın, etrafı biraz dürtün."],
+    details: ["Bir yerlere tıklayın\netrafla oynaşın"],
     cat: true,
   },
   {
