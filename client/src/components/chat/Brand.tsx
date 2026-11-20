@@ -7,7 +7,7 @@ export function Wordmark() {
         <span className="wordmark-mark" aria-hidden="true">
           <img className="wordmark-logo wordmark-logo--dark" src="/logo-dark.svg" alt="" />
           <img className="wordmark-logo wordmark-logo--light" src="/logo-light.svg" alt="" />
-          <img className="wordmark-logo wordmark-logo--vice-city" src="/logo-vice-city.jpg" alt="" />
+          <img className="wordmark-logo wordmark-logo--vice-city" src="/logo-vice-city.svg" alt="" />
           <img className="wordmark-logo wordmark-logo--cat" src="/logo-cat.jpg" alt="" />
         </span>
         <span aria-label="SELAMCHAT">
