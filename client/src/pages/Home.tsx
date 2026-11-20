@@ -39,7 +39,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`page-shell${status === "chatting" ? " page-shell--chatting" : ""}`}>
+    <div className="page-shell">
       {isCatMode && <CatRain />}
       <header className="site-header">
         <Wordmark />

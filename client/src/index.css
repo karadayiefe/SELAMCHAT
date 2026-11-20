@@ -961,38 +961,6 @@
       padding-left: max(0.75rem, env(safe-area-inset-left));
     }
 
-    /* In an active chat, collapse the surrounding home chrome instead of
-       pushing it above the keyboard. The chat itself becomes the screen. */
-    .page-shell--chatting {
-      height: 100svh;
-      height: 100dvh;
-      min-height: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .page-shell--chatting > .site-header,
-    .page-shell--chatting > .site-footer {
-      display: none;
-    }
-
-    .page-shell--chatting > .panel {
-      flex: 1 1 auto;
-      width: 100%;
-      max-width: none;
-      min-height: 0;
-      margin: 0;
-      border: 0;
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    .page-shell--chatting > .panel > .state-panel-enter,
-    .page-shell--chatting .chat-shell {
-      min-height: 0;
-      height: 100%;
-    }
-
     .panel {
       min-width: 0;
       margin-top: 0;
