@@ -97,6 +97,19 @@ export function ChatPanel({
     element.style.height = `${Math.min(element.scrollHeight, 88)}px`;
   }, [text]);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const keepComposerVisible = () => {
+      if (document.activeElement !== inputRef.current) return;
+      window.requestAnimationFrame(() => inputRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" }));
+    };
+    viewport.addEventListener("resize", keepComposerVisible);
+    return () => {
+      viewport.removeEventListener("resize", keepComposerVisible);
+    };
+  }, []);
+
   const submit = async () => {
     const value = text.trim();
     if (!value) return;
